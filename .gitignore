@@ -1,0 +1,40 @@
+# Python virtual environment
+venv/
+backend/venv/
+ENV/
+env/
+
+# Python cache & compiled files
+__pycache__/
+backend/__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Local Database & data
+*.db
+*.sqlite3
+backend/gigachad.db
+
+# Uploads & Temp files
+backend/uploads/*
+!backend/uploads/.gitkeep
+uploads/
+temp/
+scratch/
+*.log
+
+# Environment variables & secrets
+.env
+backend/.env
+
+# Node & package artifacts
+node_modules/
+package-lock.json
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

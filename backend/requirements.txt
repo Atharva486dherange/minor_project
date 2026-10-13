@@ -1,0 +1,45 @@
+# GigaChad AI Backend — 100% Free, No API Keys Required
+# Install with: pip install -r requirements.txt
+
+# Web Framework
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+
+# NLP — Summarization, Q&A, Sentiment (runs locally via Hugging Face)
+transformers==4.41.2
+torch==2.3.0
+sentencepiece==0.2.0
+accelerate==0.30.0
+
+# Speech-to-Text (OpenAI Whisper — open-source, runs locally, no key needed)
+openai-whisper==20231117
+ffmpeg-python==0.2.0
+
+# PDF Text Extraction
+pdfplumber==0.11.0
+PyMuPDF==1.24.3
+
+# OCR — Handwritten Notes from Images
+pytesseract==0.3.10
+Pillow==10.3.0
+
+# Named Entity Recognition + Action Extraction
+spacy==3.7.4
+
+# Keyword Extraction (word cloud data)
+yake==0.4.8
+
+# Vector Store for Q&A over long transcripts (chromadb is 100% local)
+chromadb==0.5.0
+sentence-transformers==3.0.0
+
+# Database
+sqlalchemy==2.0.30
+aiosqlite==0.20.0
+
+# Utilities
+python-dotenv==1.0.1
+aiofiles==23.2.1
+httpx==0.27.0
+numpy==1.26.4

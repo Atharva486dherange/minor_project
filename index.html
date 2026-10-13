@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GigaChad AI — Meeting, Document & Notes Intelligence</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+</head>
+<body>
+<div id="app"></div>
+<script type="text/babel">
+
+
+
+
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ═══════════════════════════════════════════════════
+   ICONS
+═══════════════════════════════════════════════════ */
+const Ic = ({d,size=16,s="currentColor",sw=2,f="none"}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={f} stroke={s} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+    {Array.isArray(d)?d.map((p,i)=><path key={i} d={p}/>):<path d={d}/>}
+  </svg>
+);
+const I = {
+  zap:'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
+  moon:'M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z',
+  sun:'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
+  video:['M23 7l-7 5 7 5V7z','M1 5h15a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H1V5z'],
+  doc:['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z','M14 2v6h6','M16 13H8','M16 17H8','M10 9H8'],
+  pen:['M12 20h9','M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'],
+  copy:['M20 9h-9a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2z','M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
+  dl:['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4','M7 10l5 5 5-5','M12 15V3'],
+  check:'M20 6L9 17l-5-5',
+  x:'M18 6 6 18M6 6l12 12',
+  send:'M22 2 11 13M22 2 15 22 11 13 2 9l20-7z',
+  upload:['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4','M17 8l-5-5-5 5','M12 3v12'],
+  link:['M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71','M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'],
+  wand:['M15 4V2','M15 16v-2','M8 9h2','M20 9h2','M17.8 11.8 19 13','M15 9h0','M17.8 6.2 19 5','M3 21l9-9','M12.2 6.2 11 5'],
+  img:['M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z','M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'],
+  refresh:['M23 4v6h-6','M1 20v-6h6','M3.51 9a9 9 0 0 1 14.85-3.36L23 10','M1 14l4.64 4.36A9 9 0 0 0 20.49 15'],
+  plus:'M12 5v14M5 12h14',
+  chevD:'M6 9l6 6 6-6',
+  chevU:'M18 15l-6-6-6 6',
+  star:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+  play:'M5 3l14 9-14 9V3z',
+  clock:['M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z','M12 6v6l4 2'],
+  sparkle:'M9.937 15.5A2 2 0 008.5 14.063l-6.135-1.582a.5.5 0 010-.962L8.5 9.936A2 2 0 009.937 8.5l1.582-6.135a.5.5 0 01.963 0L14.063 8.5A2 2 0 0015.5 9.937l6.135 1.581a.5.5 0 010 .964L15.5 14.063a2 2 0 00-1.437 1.437l-1.582 6.135a.5.5 0 01-.963 0z',
+  brain:'M12 5a3 3 0 10-5.997.125 4 4 0 00-2.526 5.77 4 4 0 00.556 6.588A4 4 0 1012 18z M12 5a3 3 0 115.997.125 4 4 0 012.526 5.77 4 4 0 01-.556 6.588A4 4 0 1112 18z',
+  shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+  hash:'M4 9h16M4 15h16M10 3l-2 18M16 3l-2 18',
+  mic:['M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z','M19 10v2a7 7 0 01-14 0v-2','M12 19v4M8 23h8'],
+  globe:['M12 2a10 10 0 100 20 10 10 0 000-20z','M2 12h20','M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z'],
+  settings:['M12 15a3 3 0 100-6 3 3 0 000 6z','M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z'],
+};
+
+/* ═══════════════════════════════════════════════════
+   SHARED HOOKS / COMPONENTS
+═══════════════════════════════════════════════════ */
+
+function ThemeToggle({theme, setTheme}) {
+  return (
+    <button className="btn-icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Toggle theme">
+      <Ic d={theme === 'dark' ? I.sun : I.moon} size={16} />
+    </button>
+  );
+}
+
+
+function useNotify(){
+  const [items,setItems]=useState([]);
+  const id=useRef(0);
+  const notify=useCallback((msg,err=false)=>{
+    const nid=++id.current;
+    setItems(p=>[...p,{id:nid,msg,err}]);
+    setTimeout(()=>setItems(p=>p.filter(x=>x.id!==nid)),3500);
+  },[]);
+  const rm=useCallback(nid=>setItems(p=>p.filter(x=>x.id!==nid)),[]);
+  return{items,notify,rm};
+}
+
+function Notifs({items,rm}){
+  return(
+    <div className="notif-stack">
+      {items.map(n=>(
+        <div key={n.id} className={`notif${n.err?' err':''}`}>
+          <span>{n.err?'✕':'✓'}</span>
+          <span style={{flex:1}}>{n.msg}</span>
+          <button className="btn-icon" onClick={()=>rm(n.id)}><Ic d={I.x} size={12}/></button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Toggle({checked,onChange}){
+  return(
+    <label className="tgl">
+      <input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)}/>
+      <span className="tgl-s"/>
+    </label>
+  );
+}
+
+function StatBar({pct,color}){
+  const [w,setW]=useState(0);
+  useEffect(()=>{setTimeout(()=>setW(pct),150);},[pct]);
+  return(
+    <div style={{flex:1,height:5,background:'var(--border)',borderRadius:5,overflow:'hidden'}}>
+      <div style={{height:'100%',background:color,borderRadius:5,width:`${w}%`,transition:'width .8s cubic-bezier(.22,1,.36,1)'}}/>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════ */
+
+const EXPLAIN_KNOWLEDGE = {
+  0: {
+    eli5: "The entire company has one single main goal: earning $2.4 Million in yearly software subscriptions. Any project that doesn't help reach this goal is canceled.",
+    terms: [
+      { term: "ARR", def: "Annual Recurring Revenue — predictable subscription income earned each year." },
+      { term: "North Star", def: "The single most critical target that guides all team decisions." }
+    ],
+    why: "Explains why Sarah is strictly cutting low-priority tasks and focusing all resources on the launch."
+  },
+  1: {
+    eli5: "Developers only have 60% of their working hours to build new features because 40% of their time is spent fixing emergency server crashes and cleaning up old messy code.",
+    terms: [
+      { term: "Tech Debt", def: "Rushed coding shortcuts taken in the past that now require rework." },
+      { term: "On-Call", def: "Engineers on duty 24/7 to fix urgent system outages." }
+    ],
+    why: "Explains why new feature development is progressing slower than leadership originally estimated."
+  },
+  2: {
+    eli5: "The new user login system is almost complete, but rare corner-case errors (like users closing the browser while logging in with Google) still need bug fixing.",
+    terms: [
+      { term: "Auth v2", def: "Second version of the Authentication/login security system." },
+      { term: "OAuth", def: "Industry standard that lets users log in using Google/Apple/GitHub." },
+      { term: "Edge Cases", def: "Rare or unusual situations where bugs typically hide." },
+      { term: "Staging", def: "A clone of the live website used for final testing before public release." }
+    ],
+    why: "A broken login system will immediately crash the entire user onboarding flow on launch day."
+  },
+  3: {
+    eli5: "The new tutorial screens for first-time users helped 34% more people successfully finish setting up their accounts without giving up.",
+    terms: [
+      { term: "Onboarding", def: "The initial step-by-step walkthrough welcoming a new user." },
+      { term: "Task Completion", def: "Metric measuring if users successfully achieved what they intended." }
+    ],
+    why: "Higher onboarding completion directly drives conversion to the $2.4M subscription target."
+  },
+  4: {
+    eli5: "The tech team needs $180,000 more money than they were allocated for cloud servers and contractor costs. If management doesn't approve the funds by Nov 1, the launch will be delayed.",
+    terms: [
+      { term: "Budget Gap", def: "Shortfall between required project costs and approved budget funds." },
+      { term: "Launch Blocker", def: "An issue serious enough to delay the product release." }
+    ],
+    why: "This is the single highest operational risk flagged in the entire meeting."
+  },
+  5: {
+    eli5: "When simulating 10,000 customers trying to pay at the exact same second, the checkout page froze and took way too long to respond.",
+    terms: [
+      { term: "Load Testing", def: "Simulating thousands of simulated users to stress-test servers." },
+      { term: "Latency Spike", def: "Sudden, severe delay in system response time." },
+      { term: "Payment Gateway", def: "The financial service processing credit card transactions (e.g. Stripe)." }
+    ],
+    why: "If checkout freezes at launch, customers cannot buy subscriptions, directly hurting the revenue target."
+  },
+  6: {
+    eli5: "The team must establish legal rules defining when old customer data is permanently deleted. Without this, European regulators can fine the company millions.",
+    terms: [
+      { term: "Data Retention", def: "Legal protocol determining how long customer data is kept before deletion." },
+      { term: "GDPR", def: "General Data Protection Regulation — strict European privacy law with penalties up to €20M or 4% of revenue." }
+    ],
+    why: "Legal liability that could bankrupt a company or block them from operating in Europe."
+  },
+  7: {
+    eli5: "The launch date is strictly locked for November 14th. All automated tests on the staging server must pass without a single failure by Friday.",
+    terms: [
+      { term: "Ship", def: "Release the software to the public." },
+      { term: "Staging Green", def: "All automated unit/integration tests are passing without errors." }
+    ],
+    why: "Establishes the firm deadline that all team members and deliverables are held accountable to."
+  }
+};
+
+const MEETING_TRANSCRIPT=[
+  {time:'00:00',speaker:'Sarah Chen',color:'#22c55e',text:"Good morning everyone — let's dive straight in. Q3 north star is $2.4M ARR. All work maps to this or it's cut."},
+  {time:'04:12',speaker:'Sarah Chen',color:'#22c55e',text:"Agenda items that don't map to the $2.4M target are cut. No exceptions."},
+  {time:'07:55',speaker:'Marcus Lee',color:'#3b82f6',text:'Engineering is at 60% capacity for new features after on-call and tech debt allocation.'},
+  {time:'09:30',speaker:'Marcus Lee',color:'#3b82f6',text:'Auth v2 is 80% done. OAuth edge cases remain. Staging ready by Thursday EOD.'},
+  {time:'11:20',speaker:'Priya Nair',color:'#a78bfa',text:'The onboarding redesign tests 34% better on task completion. Final mockups by Nov 1.'},
+  {time:'13:42',speaker:'Sarah Chen',color:'#22c55e',text:"I'm flagging a $180K gap in the engineering budget. Resolution before Nov 1st or launch is at risk."},
+  {time:'15:10',speaker:'Marcus Lee',color:'#3b82f6',text:'Load testing at 10k req/s — latency spikes at the payment gateway. Investigating.'},
+  {time:'16:55',speaker:'Tom Wallace',color:'#f59e0b',text:'Data retention policy must be locked before launch. GDPR exposure is real without it.'},
+  {time:'18:45',speaker:'Sarah Chen',color:'#22c55e',text:"Final call — we ship November 14th. No exceptions. Marcus, staging green by Friday."},
+];
+const MEETING_TLDR=[
+  {c:'#22c55e',t:'Q3 target confirmed at $2.4M ARR — all work items must map to this number.'},
+  {c:'#3b82f6',t:'Engineering at 60% capacity for features. Auth v2 80% done, staging by Thursday.'},
+  {c:'#a78bfa',t:'Onboarding redesign tests 34% better — mockups final by November 1st.'},
+  {c:'#f59e0b',t:'$180K budget gap flagged — resolution due Oct 28 or launch is at risk.'},
+  {c:'#22c55e',t:'Launch confirmed November 14th. GDPR data retention is a hard blocker.'},
+];
+const MEETING_ACTIONS=[
+  {id:1,t:'Finalize Q3 budget allocation doc',o:'Sarah Chen',d:'Oct 28',p:'high',s:'pending'},
+  {id:2,t:'Ship auth module v2 to staging',o:'Marcus Lee',d:'Oct 25',p:'high',s:'in-prog'},
+  {id:3,t:'Design onboarding flow mockups',o:'Priya Nair',d:'Nov 1',p:'medium',s:'pending'},
+  {id:4,t:'Sync with legal on data retention',o:'Tom Wallace',d:'Oct 30',p:'high',s:'pending'},
+  {id:5,t:'Load test payment gateway at 10k/s',o:'Marcus Lee',d:'Oct 26',p:'high',s:'in-prog'},
+  {id:6,t:'Prepare investor update deck',o:'Sarah Chen',d:'Nov 3',p:'low',s:'not-started'},
+];
+const MEETING_SPEAKERS=[
+  {name:'Sarah Chen',role:'Product Lead',color:'#22c55e',talk:52,statements:3},
+  {name:'Marcus Lee',role:'Engineering Lead',color:'#3b82f6',talk:30,statements:3},
+  {name:'Priya Nair',role:'Design Lead',color:'#a78bfa',talk:10,statements:1},
+  {name:'Tom Wallace',role:'Legal Counsel',color:'#f59e0b',talk:8,statements:1},
+];
+const MEETING_AI=[
+  "The Q3 target is $2.4M ARR. Sarah confirmed all work must map to this — anything that doesn't is cut immediately.",
+  "6 action items were assigned. The highest priority is the $180K budget resolution due Oct 28.",
+  "Sarah dominated talk time at 52%. Consider better facilitation for balanced input next meeting.",
+  "The budget conflict at 13:42 shifted the meeting's sentiment from positive to tense.",
+  "GDPR data retention policy is a hard blocker for the Nov 14 launch — Tom Wallace owns this.",
+];
+
+const DOC_BULLETS=[
+  'The document outlines a comprehensive Q3 strategy targeting $2.4M ARR through three primary growth vectors.',
+  'Customer acquisition cost (CAC) has decreased 18% quarter-over-quarter due to improved onboarding funnel.',
+  'Churn risk is concentrated in 12 enterprise accounts — proactive outreach recommended within 7 days.',
+  'Recommended pricing A/B test on the annual plan could yield 8-12% uplift based on comparable benchmarks.',
+  'Mobile app beta targets 500 internal users by August 15, with public launch planned for September.',
+];
+const DOC_EXEC='This strategic brief outlines the Q3 2024 growth plan targeting $2.4M ARR. Key initiatives include: (1) reducing CAC through onboarding optimization, achieving an 18% QoQ improvement; (2) mitigating churn risk across 12 flagged enterprise accounts via proactive customer success outreach; (3) launching a pricing A/B test projected to yield 8-12% revenue uplift; and (4) shipping the mobile app beta to 500 internal users by August 15. Critical dependencies include engineering capacity allocation (currently 60% for new features) and resolution of the $180K budget gap flagged by Finance.';
+const DOC_ABSTRACT='This paper presents a multi-vector growth strategy for Q3 2024, targeting $2.4M in annual recurring revenue. Through analysis of customer acquisition metrics, churn patterns, and pricing elasticity, we identify three primary growth levers. The proposed approach demonstrates potential for 15-20% quarter-over-quarter revenue growth while maintaining customer satisfaction scores above the 90th percentile.';
+
+const NOTE_SAMPLE='Meeting notes from the product sync:\n- Launch date moved to Nov 14\n- Auth v2 needs OAuth edge case fixes\n- Budget gap of $180K unresolved\n- Priya\'s onboarding redesign shows +34% completion\n- Tom flagged GDPR data retention as blocker\n- Marcus load testing payment gateway\n- Sarah wants staging green by Friday';
+const NOTE_OCR_RESULT='📝 Transcribed from handwritten notes:\n\nQ3 Roadmap — Key Decisions:\n1. Launch target: November 14th (firm)\n2. Auth v2 → staging by Thursday EOD\n3. Budget gap: $180K — Sarah resolving by Oct 28\n4. Onboarding redesign: 34% improvement confirmed\n5. GDPR retention policy: hard blocker (Tom)\n6. Payment gateway: latency spikes at 10k req/s\n\nAction: Emergency sync needed within 48 hours between Sarah, Marcus, and Tom.';
+
+/* ═══════════════════════════════════════════════════
+   MEETING SECTION
+═══════════════════════════════════════════════════ */
+function MeetingSection({notify, backendOnline}){
+  const [explainingIdx, setExplainingIdx] = useState(null);
+  const [customExplain, setCustomExplain] = useState({});
+  const fileInputRef = useRef(null);
+  const [realFile, setRealFile] = useState(null);
+  const [customTranscript, setCustomTranscript] = useState(null);
+  const [customSummary, setCustomSummary] = useState(null);
+  const [customActions, setCustomActions] = useState(null);
+  const [procMsg, setProcMsg] = useState('Processing...');
+  
+  async function toggleExplain(idx, text) {
+    if (explainingIdx === idx) {
+      setExplainingIdx(null);
+      return;
+    }
+    setExplainingIdx(idx);
+    if (!EXPLAIN_KNOWLEDGE[idx] && backendOnline && !customExplain[idx]) {
+      try {
+        const res = await fetch('http://localhost:8000/explain', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            sentence: text,
+            context: MEETING_TRANSCRIPT.map(m => m.text).join(' ')
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCustomExplain(prev => ({
+            ...prev,
+            [idx]: {
+              eli5: data.explanation || data.answer,
+              terms: (data.key_terms || []).map(k => ({term: k.term, def: k.type})),
+              why: data.why_matters || "Identified as a critical point during analysis."
+            }
+          }));
+        }
+      } catch (e) {
+        console.log('Explain error:', e);
+      }
+    }
+  }
+
+  function askAboutPoint(pointText) {
+    setResTab('ai');
+    setAiQ(`Can you explain what this means in simple words: "${pointText}"?`);
+  }
+
+  const [file,setFile]=useState(null);
+  const [url,setUrl]=useState('');
+  const [drag,setDrag]=useState(false);
+  const [screen,setScreen]=useState('input');
+  const [pct,setPct]=useState(0);
+  const [step,setStep]=useState(0);
+  const [resTab,setResTab]=useState('summary');
+  const [checked,setChecked]=useState([]);
+  const [aiQ,setAiQ]=useState('');
+  const [aiMsgs,setAiMsgs]=useState([{id:0,role:'ai',text:"Hi! I've analyzed your meeting. Ask me anything about it."}]);
+  const [openSp,setOpenSp]=useState(0);
+  const STEPS=['Uploading…','Transcribing audio…','Identifying speakers…','Extracting insights…','Generating summary…'];
+  const canRun=file||url.trim().length>8;
+
+  function loadSample(e){
+    if(e) e.stopPropagation();
+    setRealFile(null);
+    setCustomTranscript(null);
+    setCustomSummary(null);
+    setCustomActions(null);
+    setFile({name:'Q3_Roadmap_Meeting.mp4',size:'284 MB'});
+    notify('📹 Demo meeting loaded');
+  }
+
+  function handleFileSelect(e){
+    const f = e.target.files && e.target.files[0];
+    if(f){
+      setRealFile(f);
+      setCustomTranscript(null);
+      setCustomSummary(null);
+      setCustomActions(null);
+      setFile({name:f.name, size:(f.size/1e6).toFixed(1)+' MB'});
+      notify(`📁 ${f.name} selected`);
+    }
+  }
+
+  function handleDrop(e){
+    e.preventDefault();setDrag(false);
+    const f=e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f){
+      setRealFile(f);
+      setCustomTranscript(null);
+      setCustomSummary(null);
+      setCustomActions(null);
+      setFile({name:f.name, size:(f.size/1e6).toFixed(1)+' MB'});
+      notify(`📁 ${f.name} ready`);
+    }
+  }
+
+  async function run(){
+    setScreen('processing');setPct(10);setStep(0);notify('⚡ Processing started…');
+    
+    // If real file and backend online -> call real FastAPI endpoint
+    if(realFile && backendOnline){
+      try {
+        setProcMsg('Uploading file to backend...');
+        setPct(25); setStep(0);
+        
+        const fd = new FormData();
+        fd.append('file', realFile);
+        
+        setProcMsg('Running Whisper Speech-to-Text...');
+        setPct(45); setStep(1);
+        
+        const res = await fetch('http://localhost:8000/transcribe', {
+          method: 'POST',
+          body: fd
+        });
+        
+        if(!res.ok) throw new Error('Transcription failed with status ' + res.status);
+        const data = await res.json();
+        
+        setProcMsg('Extracting Summary & Action Items...');
+        setPct(75); setStep(3);
+        
+        // Summarize
+        const sumRes = await fetch('http://localhost:8000/summarize', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text: data.text, session_id: data.session_id })
+        });
+        const sumData = sumRes.ok ? await sumRes.json() : null;
+        
+        // Actions
+        const actRes = await fetch('http://localhost:8000/actions', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text: data.text, session_id: data.session_id })
+        });
+        const actData = actRes.ok ? await actRes.json() : null;
+        
+        setPct(100); setStep(4);
+        
+        // Format segments
+        const segs = (data.segments || []).map((s, idx) => ({
+          time: new Date(s.start * 1000).toISOString().substr(14, 5),
+          speaker: s.speaker || ('Speaker ' + (idx % 3 + 1)),
+          color: idx % 3 === 0 ? '#22c55e' : idx % 3 === 1 ? '#3b82f6' : '#a78bfa',
+          text: s.text
+        }));
+        
+        setCustomTranscript(segs.length ? segs : [{time:'00:00', speaker:'Speaker 1', color:'#22c55e', text: data.text}]);
+        if(sumData) setCustomSummary(sumData);
+        if(actData && actData.actions) setCustomActions(actData.actions);
+        
+        setTimeout(()=>{ setScreen('results'); notify('✅ Real AI Analysis complete!'); }, 600);
+        return;
+      } catch(err) {
+        console.error('Backend pipeline error:', err);
+        notify('⚠️ Backend processing note: Falling back to fast analysis mode (' + err.message + ')', true);
+      }
+    }
+    
+    // Fallback simulation
+    let p=15;
+    const iv=setInterval(()=>{
+      p+=Math.random()*8+4;
+      const next=Math.min(p,100);
+      setPct(next);setStep(Math.floor((next/100)*(STEPS.length-1)));
+      if(next>=100){clearInterval(iv);setTimeout(()=>{setScreen('results');notify('✅ Analysis complete!');},600);}
+    },180);
+  }
+
+  async function sendAI(){
+    if(!aiQ.trim())return;
+    const q=aiQ.trim();setAiQ('');
+    setAiMsgs(m=>[...m,{id:Date.now(),role:'user',text:q}]);
+    
+    if (backendOnline) {
+      try {
+        const res = await fetch('http://localhost:8000/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            question: q,
+            context: MEETING_TRANSCRIPT.map(t => `${t.speaker}: ${t.text}`).join('\n')
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAiMsgs(m=>[...m,{id:Date.now()+1,role:'ai',text:data.explanation || data.answer}]);
+          return;
+        }
+      } catch (err) {
+        console.log('Backend chat error, fallback to local', err);
+      }
+    }
+
+    setTimeout(()=>{
+      const answers=[
+        `Based on the meeting, ${q.toLowerCase().includes('risk')?'the main risks are: $180K budget gap (70% probability), auth v2 delays, and GDPR non-compliance.':q.toLowerCase().includes('action')?'there are 6 action items. The most urgent is the budget allocation doc due Oct 28.':q.toLowerCase().includes('explain')?'Here is the breakdown: Sarah and Marcus are synchronizing the engineering schedule, security compliance, and budget gap to ensure the November 14th product release succeeds without delay.':'Sarah Chen led the meeting with 52% talk time. The launch is confirmed for November 14th.'}`,
+      ];
+      setAiMsgs(m=>[...m,{id:Date.now()+1,role:'ai',text:answers[0]}]);
+    },600);
+  }
+
+  function toggleCheck(id){setChecked(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);}
+
+  const initials=n=>n.split(' ').map(x=>x[0]).join('');
+
+  /* ── INPUT ── */
+  if(screen==='input') return(
+    <div className="a-up" style={{maxWidth:700,margin:'0 auto'}}>
+      <div className="card" style={{padding:28,marginBottom:20}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:22}}>
+          <div className="sec">Input</div>
+          <div className="badge bg">Drag · Paste · URL</div>
+        </div>
+
+        {/* Hidden Real File Input */}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.webm,.ogg" 
+          style={{display:'none'}} 
+          onChange={handleFileSelect} 
+        />
+
+        {/* Drop zone */}
+        <div className={`dz${drag?' on':''}`} style={{padding:'36px 24px',textAlign:'center',marginBottom:16,cursor:'pointer'}}
+          onDragEnter={()=>setDrag(true)} onDragLeave={()=>setDrag(false)}
+          onDrop={handleDrop} onDragOver={e=>e.preventDefault()}
+          onClick={()=>fileInputRef.current && fileInputRef.current.click()}>
+          <div style={{width:52,height:52,background:'var(--g-dim)',borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',animation:'float 3s ease-in-out infinite'}}>
+            <Ic d={I.upload} size={24} s="var(--g)"/>
+          </div>
+          <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>
+            {file ? file.name : 'Click to Browse or Drop Audio/Video'}
+          </div>
+          <div style={{fontSize:12,color:'var(--muted)',marginBottom:16}}>MP4 · MP3 · WAV · WEBM · Zoom · Loom · Meet</div>
+          
+          {file ? (
+            <div className="file-chip" style={{justifyContent:'center',margin:'0 auto'}} onClick={e=>e.stopPropagation()}>
+              <Ic d={I.check} size={12} s="var(--g)" sw={2.5}/>
+              <span style={{maxWidth:220,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{file.name}</span>
+              <span style={{color:'var(--muted)',fontSize:11}}>{file.size}</span>
+              <button className="btn-icon" onClick={e=>{e.stopPropagation();setFile(null);setRealFile(null);}} style={{marginLeft:4}}>
+                <Ic d={I.x} size={11}/>
+              </button>
+            </div>
+          ) : (
+            <div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'center',flexWrap:'wrap'}}>
+              <button className="btn btn-s" type="button" onClick={(e)=>{e.stopPropagation(); fileInputRef.current && fileInputRef.current.click();}} style={{fontSize:12,padding:'6px 14px'}}>
+                📁 Browse Files
+              </button>
+              <button className="btn btn-s" type="button" onClick={loadSample} style={{fontSize:12,padding:'6px 14px',background:'var(--g-dim)',color:'var(--g)',borderColor:'var(--g)'}}>
+                📹 Load Demo Sample
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* URL */}
+        <div className="input-wrap" style={{marginBottom:16}}>
+          <Ic d={I.link} size={15} s="var(--muted)"/>
+          <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="Or paste YouTube / Zoom / Loom URL…"/>
+          {url&&<button className="badge bg b-click" onClick={()=>{setFile({name:'zoom-recording.mp4',size:'URL'});notify('🔗 URL loaded');}}>Load</button>}
+        </div>
+
+        {/* Options */}
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:20}}>
+          {['Speaker Diarization','Chit-Chat Filter','Action Extraction','Sentiment Analysis'].map((o,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:6}}>
+              <Toggle checked={true} onChange={()=>{}}/>
+              <span style={{fontSize:12,color:'var(--sub)',fontWeight:600}}>{o}</span>
+            </div>
+          ))}
+        </div>
+
+        <button className="btn btn-p" style={{width:'100%',height:48}} disabled={!canRun} onClick={run}>
+          <Ic d={I.zap} size={16} s="#fff" sw={2.5}/> Shred & Summarize
+        </button>
+      </div>
+    </div>
+  );
+
+  /* ── PROCESSING ── */
+  if(screen==='processing') return(
+    <div className="a-up" style={{maxWidth:560,margin:'0 auto'}}>
+      <div className="card" style={{padding:32}}>
+        <div style={{textAlign:'center',marginBottom:28}}>
+          <div style={{width:64,height:64,background:'var(--g-dim)',borderRadius:20,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',animation:'float 2s ease-in-out infinite'}}>
+            <div className="wform" style={{height:28}}>
+              {[...Array(8)].map((_,i)=><div key={i} className="wbar" style={{animationDelay:`${i*.12}s`,height:`${5+Math.sin(i)*8}px`}}/>)}
+            </div>
+          </div>
+          <div style={{fontWeight:800,fontSize:18,marginBottom:6}}>Processing Your Meeting</div>
+          <div style={{fontSize:13,color:'var(--sub)'}}>AI is analyzing audio, identifying speakers, and extracting insights…</div>
+        </div>
+
+        {/* Steps */}
+        <div style={{marginBottom:24}}>
+          {STEPS.map((s,i)=>{
+            const state=i<step?'done':i===step?'active':'wait';
+            return(
+              <div key={i} className="proc-step" style={{animationDelay:`${i*.1}s`}}>
+                <div className={`step-dot ${state}`}>
+                  {state==='done'?'✓':state==='active'?<span style={{display:'inline-block',animation:'spin 1s linear infinite',fontSize:10}}>⚙</span>:i+1}
+                </div>
+                <div className={`step-label ${state}`}>{s}</div>
+                {state==='active'&&<div className="dot dot-blink" style={{marginLeft:'auto'}}/>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Progress */}
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+          <span style={{fontSize:12,color:'var(--sub)',fontWeight:600}}>{STEPS[step]}</span>
+          <span style={{fontSize:14,fontWeight:900,color:'var(--g)'}}>{Math.round(pct)}%</span>
+        </div>
+        <div className="prog">
+          <div className="prog-bar" style={{width:`${pct}%`}}/>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── RESULTS ── */
+  const TABS=['⚡ Summary','🎯 Actions','🗣️ Speakers','📝 Transcript','🤖 Ask AI'];
+  return(
+    <div className="a-up" style={{maxWidth:800,margin:'0 auto'}}>
+      {/* Stats bar */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:10,marginBottom:20}}>
+        {[
+          {l:'Duration',v:'18m 45s',c:'var(--b)'},
+          {l:'Effective',v:'14m 33s',c:'var(--g)'},
+          {l:'Saved',v:'4m 12s',c:'var(--a)'},
+          {l:'Speakers',v:'4',c:'var(--p)'},
+          {l:'Actions',v:'6',c:'var(--cy)'},
+          {l:'Confidence',v:'98.2%',c:'var(--g)'},
+        ].map((s,i)=>(
+          <div key={i} className={`card card-lift a-up dl${i+1}`} style={{padding:14,textAlign:'center'}}>
+            <div style={{fontWeight:900,fontSize:20,color:s.c,letterSpacing:'-0.5px'}}>{s.v}</div>
+            <div style={{fontSize:10,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',letterSpacing:'.6px',marginTop:2}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{padding:28}}>
+        {/* Tab bar */}
+        <div style={{display:'flex',gap:6,background:'var(--surf)',padding:4,borderRadius:'',overflow:'auto',marginBottom:24}}>
+          {TABS.map((t,i)=>{
+            const key=['summary','actions','speakers','transcript','ai'][i];
+            return <button key={i} className={`res-tab${resTab===key?' active':''}`} onClick={()=>setResTab(key)}>{t}</button>;
+          })}
+        </div>
+
+        {/* Export bar */}
+        <div style={{display:'flex',gap:8,marginBottom:24,flexWrap:'wrap'}}>
+          {[{l:'Copy',ic:I.copy},{l:'PDF',ic:I.dl},{l:'Slack ⚡',ic:I.send},{l:'Notion 📝',ic:I.doc}].map((b,i)=>(
+            <button key={i} className="btn btn-s" onClick={()=>notify(`${b.l} — done!`)}><Ic d={b.ic} size={12}/>{b.l}</button>
+          ))}
+          <button className="btn btn-s" style={{marginLeft:'auto'}} onClick={()=>{setScreen('input');setFile(null);setUrl('');notify('🔄 New session');}}>
+            <Ic d={I.refresh} size={12}/> New
+          </button>
+        </div>
+
+        {/* Summary */}
+        {resTab==='summary'&&(
+          <div className="a-scale">
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <span style={{fontSize:22}}>⚡</span>
+                <span style={{fontWeight:800,fontSize:17}}>{customSummary ? 'Real AI Summary (FastAPI)' : 'TL;DR Summary'}</span>
+                <span className="badge ba">{customSummary ? 'Live Model Output' : '15-second read'}</span>
+              </div>
+              {customSummary && <span className="badge bg">✓ Real File Processed</span>}
+            </div>
+
+            {customSummary && customSummary.executive && (
+              <div style={{padding:'16px 18px',background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,marginBottom:16,borderLeft:'3px solid var(--g)'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'var(--g)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>📊 Executive Overview:</div>
+                <p style={{fontSize:13,lineHeight:1.7,color:'var(--text)',margin:0}}>{customSummary.executive}</p>
+              </div>
+            )}
+
+            {((customSummary && customSummary.bullets && customSummary.bullets.length)
+              ? customSummary.bullets.map((b, idx) => ({ t: b, c: idx % 3 === 0 ? '#22c55e' : idx % 3 === 1 ? '#3b82f6' : '#a78bfa' }))
+              : MEETING_TLDR
+            ).map((item,i)=>(
+              <div key={i} className={`a-up dl${Math.min(i+1,6)}`} style={{display:'flex',alignItems:'flex-start',gap:14,padding:'14px 16px',background:'var(--surf)',borderRadius:10,marginBottom:10,border:'1px solid var(--border)',position:'relative',overflow:'hidden'}}>
+                <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,background:item.c,borderRadius:'3px 0 0 3px'}}/>
+                <div style={{width:28,height:28,borderRadius:8,background:`${item.c}18`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:12,color:item.c,flexShrink:0}}>{i+1}</div>
+                <p style={{fontSize:13,lineHeight:1.7,margin:0,flex:1}}>{item.t}</p>
+              </div>
+            ))}
+
+            {/* Anchored Notices if real file */}
+            {customSummary && customSummary.anchored_notices && customSummary.anchored_notices.length > 0 && (
+              <div style={{marginTop:16,padding:'14px 16px',background:'var(--card2)',border:'1px solid var(--a-dim)',borderRadius:10,borderLeft:'3px solid var(--a)'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'var(--a)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>📌 Critical Notices & Deadlines:</div>
+                {customSummary.anchored_notices.map((not, ni)=>(
+                  <div key={ni} style={{fontSize:12,color:'var(--sub)',lineHeight:1.6,marginBottom:4}}>• {not}</div>
+                ))}
+              </div>
+            )}
+
+            {/* AI insights */}
+            <div style={{marginTop:20,padding:'16px 18px',background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10}}>
+              <div className="sec" style={{marginBottom:12}}>AI Insights</div>
+              {(customSummary && customSummary.bullets ? [
+                "Key commitments and action milestones identified across the session",
+                "Full NLP summarization generated locally using transformer models",
+                "Speaker turns and sentiment mapped in real-time"
+              ] : MEETING_AI).map((ins,i)=>(
+                <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:8,fontSize:13,color:'var(--sub)',lineHeight:1.6}}>
+                  <span style={{color:'var(--g)',flexShrink:0}}>→</span>
+                  <span>{ins}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        {resTab==='actions'&&(
+          <div className="a-scale">
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+              <span style={{fontSize:22}}>🎯</span>
+              <span style={{fontWeight:800,fontSize:17}}>Action Items</span>
+              <span className="badge bg">{MEETING_ACTIONS.length} tasks</span>
+              <span className="badge br" style={{marginLeft:4}}>{MEETING_ACTIONS.filter(a=>a.p==='high').length} high priority</span>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {MEETING_ACTIONS.map((a,i)=>(
+                <div key={a.id} className={`act-row a-up dl${i+1}`}
+                  style={{display:'flex',alignItems:'center',gap:14,padding:'12px 14px',border:'1px solid var(--border)',borderRadius:'',background:checked.includes(a.id)?'var(--g-dim)':'var(--surf)'}}>
+                  <button onClick={()=>toggleCheck(a.id)} style={{width:20,height:20,borderRadius:6,border:`2px solid ${checked.includes(a.id)?'var(--g)':'var(--border2)'}`,background:checked.includes(a.id)?'var(--g)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all .15s',flexShrink:0}}>
+                    {checked.includes(a.id)&&<Ic d={I.check} size={12} s="#fff" sw={3}/>}
+                  </button>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,textDecoration:checked.includes(a.id)?'line-through':'none',opacity:checked.includes(a.id)?.5:1,marginBottom:3}}>{a.t}</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <span className="chip" style={{fontSize:11}}>{a.o}</span>
+                      <span className="badge ba">{a.d}</span>
+                      <span className={`badge ${a.p==='high'?'br':a.p==='medium'?'ba':'bg'}`} style={{textTransform:'capitalize'}}>{a.p}</span>
+                      <span className={`badge ${a.s==='in-prog'?'bb':a.s==='pending'?'ba':'bp'}`}>{a.s==='in-prog'?'⚡ Active':a.s==='pending'?'⏳ Pending':'💤 Not Started'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Speakers */}
+        {resTab==='speakers'&&(
+          <div className="a-scale">
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+              <span style={{fontSize:22}}>🗣️</span>
+              <span style={{fontWeight:800,fontSize:17}}>Speaker Analysis</span>
+              <span className="badge bp">{MEETING_SPEAKERS.length} speakers</span>
+            </div>
+            {/* Talk time bars */}
+            <div style={{marginBottom:24,display:'flex',flexDirection:'column',gap:14}}>
+              {MEETING_SPEAKERS.map((sp,i)=>(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:14}}>
+                  <div className="avatar" style={{width:34,height:34,background:`${sp.color}18`,border:`2px solid ${sp.color}44`,color:sp.color,fontSize:12}}>{initials(sp.name)}</div>
+                  <div style={{width:100,fontSize:13,fontWeight:700,flexShrink:0}}>{sp.name}</div>
+                  <StatBar pct={sp.talk} color={sp.color}/>
+                  <span style={{fontSize:12,fontWeight:800,color:sp.color,width:40,textAlign:'right'}}>{sp.talk}%</span>
+                </div>
+              ))}
+            </div>
+            {/* Expandable quotes */}
+            {MEETING_SPEAKERS.map((sp,si)=>{
+              const quotes=MEETING_TRANSCRIPT.filter(t=>t.speaker===sp.name);
+              return(
+                <div key={si} style={{marginBottom:10,border:'1px solid var(--border)',borderRadius:'',overflow:'hidden',background:'var(--surf)'}}>
+                  <div className="acc-head" onClick={()=>setOpenSp(openSp===si?-1:si)}>
+                    <div className="avatar" style={{width:36,height:36,background:`${sp.color}18`,border:`2px solid ${sp.color}44`,color:sp.color,fontSize:12}}>{initials(sp.name)}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:800,fontSize:14}}>{sp.name}</div>
+                      <div style={{fontSize:11,color:'var(--muted)'}}>{sp.role} · {quotes.length} quotes</div>
+                    </div>
+                    <span className="badge bg">{sp.talk}%</span>
+                    <Ic d={openSp===si?I.chevU:I.chevD} size={15} s="var(--muted)"/>
+                  </div>
+                  {openSp===si&&(
+                    <div className="a-up" style={{padding:'4px 18px 16px'}}>
+                      {quotes.map((q,qi)=>(
+                        <div key={qi} className="sp-q" style={{borderLeftColor:sp.color,background:`${sp.color}08`,marginTop:10}}>
+                          <div style={{display:'flex',gap:8,marginBottom:6}}>
+                            <span className="badge bg" style={{fontSize:10,fontFamily:'monospace'}}>[{q.time}]</span>
+                          </div>
+                          <p style={{fontSize:13,lineHeight:1.65,margin:0,fontStyle:'italic',color:'var(--sub)'}}>"{q.text}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Transcript */}
+        {resTab==='transcript'&&(
+          <div className="a-scale">
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <span style={{fontSize:22}}>📝</span>
+                <span style={{fontWeight:800,fontSize:17}}>Full Transcript</span>
+                <span className="badge bg">Cleaned</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span className="badge bp" style={{display:'flex',alignItems:'center',gap:4,fontSize:11}}>
+                  <span>💡</span> Click "Explain with AI" on any line
+                </span>
+              </div>
+            </div>
+            <div style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'18px 20px',maxHeight:480,overflowY:'auto',display:'flex',flexDirection:'column',gap:12}}>
+              {(customTranscript || MEETING_TRANSCRIPT).map((t,i)=>{
+                const exp = EXPLAIN_KNOWLEDGE[i] || customExplain[i];
+                const isExp = explainingIdx === i;
+                return (
+                  <div key={i} className={`a-up dl${Math.min(i+1,6)}`} style={{display:'flex',flexDirection:'column',gap:8,padding:'10px 14px',borderRadius:'var(--radius)',background:isExp?'var(--card2)':'transparent',border:isExp?'1px solid var(--p-dim)':'1px solid transparent',transition:'all .2s ease'}}>
+                    <div style={{display:'flex',gap:12,alignItems:'flex-start',justifyContent:'space-between'}}>
+                      <div style={{display:'flex',gap:12,alignItems:'flex-start',flex:1}}>
+                        <span className="badge bg b-click" style={{fontFamily:'monospace',flexShrink:0,fontSize:10}}>[{t.time}]</span>
+                        <p style={{margin:0,fontSize:13,lineHeight:1.65}}>
+                          <strong style={{color:t.color,fontWeight:800}}>{t.speaker}:</strong>{' '}{t.text}
+                        </p>
+                      </div>
+                      <button 
+                        className="btn btn-s"
+                        onClick={()=>toggleExplain(i, t.text)}
+                        style={{padding:'4px 10px',fontSize:11,gap:4,flexShrink:0,borderRadius:6,background:isExp?'var(--p-dim)':'var(--surf)',color:isExp?'var(--p)':'var(--text)',border:'1px solid var(--border)'}}
+                        title="Explain this point in plain English using AI">
+                        💡 {isExp ? 'Hide' : 'Explain with AI'}
+                      </button>
+                    </div>
+
+                    {isExp && exp && (
+                      <div className="a-up" style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',marginTop:4}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                          <div style={{display:'flex',alignItems:'center',gap:6}}>
+                            <span style={{fontSize:16}}>🎓</span>
+                            <span style={{fontWeight:800,fontSize:13,color:'var(--p)'}}>AI Concept Explainer (Student Study Mode)</span>
+                          </div>
+                          <button className="btn btn-s" onClick={()=>askAboutPoint(t.text)} style={{padding:'3px 8px',fontSize:10,gap:4}}>
+                            💬 Ask in Chat →
+                          </button>
+                        </div>
+
+                        <div style={{fontSize:12,lineHeight:1.6,marginBottom:10,padding:'8px 12px',background:'var(--card2)',borderRadius:8,borderLeft:'3px solid var(--p)'}}>
+                          <strong style={{color:'var(--p)',display:'block',marginBottom:2}}>🍼 Plain English (ELI5):</strong>
+                          {exp.eli5}
+                        </div>
+
+                        {exp.terms && exp.terms.length > 0 && (
+                          <div style={{marginBottom:10}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'var(--sub)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>🔍 Key Jargon Defined:</div>
+                            <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                              {exp.terms.map((termItem, ti)=>(
+                                <div key={ti} style={{fontSize:11,lineHeight:1.5,padding:'4px 8px',background:'rgba(255,255,255,.02)',borderRadius:6}}>
+                                  <strong style={{color:'var(--g)'}}>{termItem.term}:</strong> <span style={{color:'var(--sub)'}}>{termItem.def}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div style={{fontSize:11,color:'var(--muted)',lineHeight:1.5,borderTop:'1px solid var(--border)',paddingTop:8}}>
+                          <strong style={{color:'var(--text)'}}>🎯 Why It Matters:</strong> {exp.why}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* AI Chat */}
+        {resTab==='ai'&&(
+          <div className="a-scale">
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+              <span style={{fontSize:22}}>🤖</span>
+              <span style={{fontWeight:800,fontSize:17}}>Ask AI About This Meeting</span>
+            </div>
+            <div style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:'',padding:'18px',minHeight:260,maxHeight:360,overflowY:'auto',display:'flex',flexDirection:'column',gap:10,marginBottom:14}}>
+              {aiMsgs.map(m=>(
+                <div key={m.id} className={`ai-msg ${m.role}`}>{m.text}</div>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <div className="input-wrap" style={{flex:1}}>
+                <input value={aiQ} onChange={e=>setAiQ(e.target.value)} placeholder="Ask anything about this meeting…"
+                  onKeyDown={e=>e.key==='Enter'&&sendAI()}/>
+              </div>
+              <button className="btn btn-p" style={{padding:'0 20px'}} onClick={sendAI}>
+                <Ic d={I.send} size={16} s="#fff"/>
+              </button>
+            </div>
+            <div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}>
+              {['What are the main risks?','Who has the most action items?','Summarize in one sentence'].map((q,i)=>(
+                <button key={i} className="pill" onClick={()=>{setAiQ(q);}}>{q}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   DOCUMENT SECTION
+═══════════════════════════════════════════════════ */
+function DocSection({notify, backendOnline}){
+  const [file,setFile]=useState(null);
+  const [realDocFile,setRealDocFile]=useState(null);
+  const [text,setText]=useState('');
+  const [style,setStyle]=useState('bullets');
+  const [screen,setScreen]=useState('input');
+  const [pct,setPct]=useState(0);
+  const docInputRef = useRef(null);
+  const [customSummary, setCustomSummary] = useState(null);
+
+  function loadSample(e){
+    if(e) e.stopPropagation();
+    setRealDocFile(null);
+    setCustomSummary(null);
+    setFile({name:'Q3_Strategy_Brief.pdf',size:'2.4 MB'});
+    notify('📄 Sample PDF loaded');
+  }
+
+  function handleDocSelect(e){
+    const f = e.target.files && e.target.files[0];
+    if(f){
+      setRealDocFile(f);
+      setCustomSummary(null);
+      setFile({name:f.name, size:(f.size/1e6).toFixed(1)+' MB'});
+      notify(`📄 ${f.name} selected`);
+    }
+  }
+
+  async function run(){
+    setScreen('processing'); setPct(15);
+    let docText = text.trim();
+
+    if(realDocFile){
+      try {
+        setPct(35);
+        if(realDocFile.name.toLowerCase().endsWith('.pdf')){
+          const fd = new FormData();
+          fd.append('file', realDocFile);
+          const pdfRes = await fetch('http://localhost:8000/extract-pdf', {
+            method: 'POST',
+            body: fd
+          });
+          if(pdfRes.ok){
+            const pdfData = await pdfRes.json();
+            if(pdfData.full_text) docText = pdfData.full_text;
+          }
+        } else {
+          docText = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve(ev.target.result || '');
+            reader.onerror = () => resolve('');
+            reader.readAsText(realDocFile);
+          });
+        }
+      } catch(err){
+        console.error('File extract error:', err);
+      }
+    }
+
+    if(docText && docText.length >= 10){
+      try {
+        setPct(65);
+        const sumRes = await fetch('http://localhost:8000/summarize', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text: docText })
+        });
+        if(sumRes.ok){
+          const sumData = await sumRes.json();
+          setCustomSummary(sumData);
+          setPct(100);
+          setTimeout(()=>{ setScreen('results'); notify('✅ Real document summarized with AI!'); }, 400);
+          return;
+        }
+      } catch(err){
+        console.error('Summarize error:', err);
+      }
+    }
+
+    let p = 30;
+    const iv = setInterval(()=>{
+      p += Math.random() * 15 + 10;
+      setPct(Math.min(p, 100));
+      if(p >= 100){
+        clearInterval(iv);
+        setTimeout(()=>{ setScreen('results'); notify('✅ Document summarized!'); }, 400);
+      }
+    }, 150);
+  }
+
+  if(screen==='input') return(
+    <div className="a-up" style={{maxWidth:700,margin:'0 auto'}}>
+      <div className="card" style={{padding:28,marginBottom:20}}>
+        <div className="sec" style={{marginBottom:18}}>Document Upload</div>
+        <input type="file" ref={docInputRef} accept=".pdf,.docx,.txt" style={{display:'none'}} onChange={handleDocSelect}/>
+        <div className={`dz${file?' on':''}`} style={{padding:'32px 24px',textAlign:'center',marginBottom:16,cursor:'pointer'}} onClick={()=>docInputRef.current && docInputRef.current.click()}>
+          <div style={{width:48,height:48,background:'var(--b-dim)',borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',animation:'float 3s ease-in-out infinite'}}>
+            <Ic d={I.doc} size={22} s="var(--b)"/>
+          </div>
+          <div style={{fontWeight:800,fontSize:15,marginBottom:4}}>
+            {file ? file.name : 'Click to Browse or Drop PDF / Docs'}
+          </div>
+          <div style={{fontSize:12,color:'var(--muted)',marginBottom:14}}>PDF · DOCX · TXT · Syllabus · Lecture Slides</div>
+          {file ? (
+            <div className="file-chip" style={{justifyContent:'center',margin:'0 auto'}} onClick={e=>e.stopPropagation()}>
+              <Ic d={I.check} size={12} s="var(--b)"/>
+              <span>{file.name}</span>
+              <span style={{color:'var(--muted)'}}>{file.size}</span>
+              <button className="btn-icon" onClick={e=>{e.stopPropagation();setFile(null);setRealDocFile(null);}} style={{marginLeft:4}}>
+                <Ic d={I.x} size={11}/>
+              </button>
+            </div>
+          ) : (
+            <div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'center'}}>
+              <button className="btn btn-s" type="button" onClick={(e)=>{e.stopPropagation(); docInputRef.current && docInputRef.current.click();}} style={{fontSize:12,padding:'5px 12px'}}>
+                📁 Browse PDF
+              </button>
+              <button className="btn btn-s" type="button" onClick={loadSample} style={{fontSize:12,padding:'5px 12px',background:'var(--b-dim)',color:'var(--b)',borderColor:'var(--b)'}}>
+                📄 Load Demo PDF
+              </button>
+            </div>
+          )}
+        </div>
+        <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Or paste raw text here…"
+          style={{width:'100%',minHeight:80,background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,padding:14,color:'var(--text)',fontSize:13,outline:'none',resize:'vertical',marginBottom:16}}/>
+        <div className="sec" style={{marginBottom:12}}>Summary Style</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20}}>
+          {[{k:'bullets',l:'📋 Bullet Points',d:'Key points as a list'},{k:'exec',l:'📊 Executive Brief',d:'One-paragraph summary'},{k:'abstract',l:'📚 Academic Abstract',d:'Formal abstract style'}].map(s=>(
+            <div key={s.k} className={`style-card${style===s.k?' on':''}`} onClick={()=>setStyle(s.k)}>
+              <div style={{fontSize:20,marginBottom:8}}>{s.l.split(' ')[0]}</div>
+              <div style={{fontWeight:800,fontSize:12,marginBottom:4}}>{s.l.split(' ').slice(1).join(' ')}</div>
+              <div style={{fontSize:11,color:'var(--muted)'}}>{s.d}</div>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-p" style={{width:'100%',height:48}} disabled={!file&&!text.trim()} onClick={run}>
+          <Ic d={I.sparkle} size={16} s="#fff"/> Summarize Document
+        </button>
+      </div>
+    </div>
+  );
+
+  if(screen==='processing') return(
+    <div className="a-up" style={{maxWidth:500,margin:'0 auto'}}>
+      <div className="card" style={{padding:32,textAlign:'center'}}>
+        <div style={{fontSize:40,marginBottom:14,animation:'float 2s ease-in-out infinite'}}>📄</div>
+        <div style={{fontWeight:800,fontSize:17,marginBottom:6}}>Analyzing Document</div>
+        <div style={{fontSize:13,color:'var(--sub)',marginBottom:20}}>Extracting key concepts and generating summary…</div>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+          <span style={{fontSize:12,color:'var(--sub)'}}>{pct<50?'Reading document…':'Generating summary…'}</span>
+          <span style={{fontSize:14,fontWeight:900,color:'var(--g)'}}>{Math.round(pct)}%</span>
+        </div>
+        <div className="prog"><div className="prog-bar" style={{width:`${pct}%`}}/></div>
+      </div>
+    </div>
+  );
+
+  const displayBullets = (customSummary && customSummary.bullets && customSummary.bullets.length) 
+    ? customSummary.bullets 
+    : DOC_BULLETS;
+  const displayExec = (customSummary && customSummary.executive) 
+    ? customSummary.executive 
+    : DOC_EXEC;
+  const displayAbstract = (customSummary && customSummary.executive)
+    ? customSummary.executive
+    : DOC_ABSTRACT;
+
+  const content = style==='bullets' ? displayBullets : style==='exec' ? [displayExec] : [displayAbstract];
+  return(
+    <div className="a-up" style={{maxWidth:700,margin:'0 auto'}}>
+      <div className="card" style={{padding:28}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+          <span style={{fontSize:22}}>📄</span>
+          <span style={{fontWeight:800,fontSize:17}}>Document Summary</span>
+          <span className="badge bb">{style}</span>
+        </div>
+        <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+          {[{l:'Copy',ic:I.copy},{l:'PDF',ic:I.dl},{l:'Markdown',ic:I.doc}].map((b,i)=>(
+            <button key={i} className="btn btn-s" onClick={()=>notify(`${b.l} — done!`)}><Ic d={b.ic} size={12}/>{b.l}</button>
+          ))}
+          <button className="btn btn-s" style={{marginLeft:'auto'}} onClick={()=>{setScreen('input');setFile(null);setText('');}}><Ic d={I.refresh} size={12}/> New</button>
+        </div>
+        <div style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'18px 20px'}}>
+          {style==='bullets'?
+            content.map((b,i)=>(
+              <div key={i} className={`a-up dl${i+1}`} style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:10}}>
+                <span style={{color:'var(--g)',fontWeight:900,fontSize:12,marginTop:2}}>•</span>
+                <p style={{margin:0,fontSize:13,lineHeight:1.7,color:'var(--sub)'}}>{b}</p>
+              </div>
+            ))
+            :<p className="a-up" style={{fontSize:14,lineHeight:1.8,color:'var(--sub)',margin:0}}>{content[0]}</p>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   NOTES SECTION
+═══════════════════════════════════════════════════ */
+function NotesSection({notify, backendOnline}){
+  const [input,setInput]=useState('');
+  const [mode,setMode]=useState(null);
+  const [output,setOutput]=useState(null);
+  const [processing,setProcessing]=useState(false);
+  const imgInputRef = useRef(null);
+
+  async function handleImgUpload(e){
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    notify('📷 Uploading image for OCR…');
+    setProcessing(true);
+    
+    if(backendOnline){
+      try {
+        const fd = new FormData();
+        fd.append('file', f);
+        const res = await fetch('http://localhost:8000/ocr', {
+          method: 'POST',
+          body: fd
+        });
+        if(res.ok){
+          const data = await res.json();
+          if(data.text){
+            setInput(data.text);
+            notify(`✅ OCR complete! Extracted ${data.word_count || 0} words`);
+            setProcessing(false);
+            return;
+          }
+        }
+      } catch(err){
+        console.error('OCR Error:', err);
+      }
+    }
+    
+    setTimeout(()=>{
+      setInput(NOTE_OCR_RESULT);
+      setProcessing(false);
+      notify('✅ OCR Demo text loaded from photo!');
+    }, 800);
+  }
+
+  async function handleAction(m){
+    if(m==='ocr'){
+      if(imgInputRef.current) imgInputRef.current.click();
+      return;
+    }
+    if(!input.trim()){notify('Type or paste some text first',true);return;}
+    setMode(m);setProcessing(true);setOutput(null);
+    
+    if(backendOnline && m==='summarize' && input.trim().length > 30){
+      try {
+        const res = await fetch('http://localhost:8000/summarize', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text: input.trim() })
+        });
+        if(res.ok){
+          const sumData = await res.json();
+          const bulletsText = (sumData.bullets || []).map((b,i) => `${i+1}. ${b}`).join('\n');
+          setOutput(`📋 AI Summary (FastAPI BART):\n\n${sumData.executive}\n\nKey Points:\n${bulletsText}`);
+          setProcessing(false);
+          notify('✅ Real AI Summary generated!');
+          return;
+        }
+      } catch(err){
+        console.error('Notes summarize error:', err);
+      }
+    }
+    setTimeout(()=>{
+      let result='';
+      if(m==='ocr') result=NOTE_OCR_RESULT;
+      else if(m==='summarize') result='📋 Summary:\n\n1. Launch date confirmed: November 14th\n2. Auth v2 needs OAuth fixes — staging by Thursday\n3. $180K budget gap requires resolution by Oct 28\n4. Onboarding redesign shows +34% improvement\n5. GDPR data retention is a hard launch blocker\n6. Payment gateway latency issues under investigation';
+      else if(m==='improve') result='✨ Improved Version:\n\nProduct Sync — Key Outcomes\n\n• Launch Date: November 14th (firm commitment, no extensions)\n• Auth Module v2: OAuth edge case fixes in progress → staging delivery by Thursday EOD\n• Budget Gap: $180K shortfall identified — Sarah Chen owns resolution by October 28th\n• Onboarding Redesign: +34% task completion improvement validated → final mockups by Nov 1\n• GDPR Compliance: Data retention policy is a hard blocker — Tom Wallace leading resolution\n• Infrastructure: Payment gateway latency spikes at 10K req/s — Marcus investigating root cause\n• Next Step: Sarah requires staging to be green by Friday';
+      else if(m==='expand') result='📖 Expanded Notes:\n\nDuring the product sync meeting, several critical decisions were made regarding the Q3 roadmap and November launch timeline.\n\nThe team has confirmed November 14th as the firm launch date, with no extensions to be granted under any circumstances. Sarah Chen, as Product Lead, has taken ownership of this deadline.\n\nOn the engineering front, the Auth v2 module is approximately 80% complete, with the remaining work focused on OAuth edge case handling. Marcus Lee has committed to having the staging environment green by Thursday end-of-day, with final sign-off required by Friday.\n\nA significant concern was raised regarding a $180K budget gap in the engineering allocation. This must be resolved by October 28th, or the launch timeline will be at immediate risk. Sarah is leading the resolution efforts.\n\nThe onboarding redesign led by Priya Nair has shown promising results, with a 34% improvement in task completion rates during testing. Final mockups are expected by November 1st.\n\nTom Wallace flagged GDPR data retention compliance as a hard blocker for launch. The data retention policy must be finalized and approved before any public release.\n\nFinally, Marcus is investigating latency spikes in the payment gateway that appear at loads of 10,000 requests per second.';
+      else if(m==='generate') result='🤖 Generated Content:\n\nQ3 Product Launch — Executive Summary\n\nOur Q3 strategy centers on achieving $2.4M ARR through a coordinated November 14th product launch. Key workstreams include:\n\n1. Authentication Module v2 — Enhanced security with OAuth support\n2. Onboarding Redesign — 34% improvement in user activation\n3. Payment Infrastructure — Load-tested for enterprise scale\n4. Compliance — GDPR data retention policy implementation\n\nRisk factors include a $180K budget gap requiring immediate resolution and GDPR compliance timelines. Recommended actions: emergency leadership sync within 48 hours, priority allocation to blocking items, and weekly progress reviews until launch.';
+      setOutput(result);
+      setProcessing(false);
+      notify('✅ Done!');
+    },1200);
+  }
+
+  return(
+    <div className="a-up" style={{maxWidth:800,margin:'0 auto'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+        {/* Left: Input */}
+        <div className="card" style={{padding:24,display:'flex',flexDirection:'column'}}>
+          <div className="sec" style={{marginBottom:14}}>Input</div>
+          <textarea value={input} onChange={e=>setInput(e.target.value)}
+            placeholder="Type, paste notes, or use OCR to scan handwritten notes…"
+            style={{flex:1,minHeight:200,background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,padding:14,color:'var(--text)',fontSize:13,outline:'none',resize:'none',lineHeight:1.7,marginBottom:14}}/>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            <button className="btn btn-s" onClick={()=>setInput(NOTE_SAMPLE)}>📝 Load Sample</button>
+            <button className="btn btn-s" onClick={()=>{setInput('');setOutput(null);}}>🗑️ Clear</button>
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="card" style={{padding:24,display:'flex',flexDirection:'column'}}>
+          <input type="file" ref={imgInputRef} accept="image/*,.png,.jpg,.jpeg" style={{display:'none'}} onChange={handleImgUpload}/>
+          <div className="sec" style={{marginBottom:14}}>Actions</div>
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+            {[
+              {k:'ocr',icon:'📷',label:'OCR — Scan Image Photo',desc:'Pick photo of notebook / blackboard to transcribe'},
+              {k:'summarize',icon:'📋',label:'Summarize',desc:'Extract key points into a bullet list'},
+              {k:'improve',icon:'✨',label:'Improve & Clean',desc:'Fix grammar, structure, and formatting'},
+              {k:'expand',icon:'📖',label:'Expand & Detail',desc:'Add context, detail, and explanation'},
+              {k:'generate',icon:'🤖',label:'Generate New',desc:'Create content from your notes as a prompt'},
+            ].map(a=>(
+              <button key={a.k} className={`note-action${mode===a.k?' on':''}`} onClick={()=>handleAction(a.k)} disabled={processing}>
+                <span style={{fontSize:20}}>{a.icon}</span>
+                <div style={{flex:1,textAlign:'left'}}>
+                  <div style={{fontWeight:800,fontSize:13,color:mode===a.k?'var(--g)':'var(--text)'}}>{a.label}</div>
+                  <div style={{fontSize:11,color:'var(--muted)'}}>{a.desc}</div>
+                </div>
+                {processing&&mode===a.k&&<span style={{animation:'spin 1s linear infinite',fontSize:14}}>⚙️</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* Output */}
+          {output&&(
+            <div className="a-up" style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,padding:14,flex:1,overflowY:'auto',maxHeight:260}}>
+              <div style={{display:'flex',justifyContent:'flex-end',gap:6,marginBottom:10}}>
+                <button className="btn btn-s" onClick={()=>{navigator.clipboard?.writeText(output);notify('📋 Copied!');}}><Ic d={I.copy} size={11}/>Copy</button>
+              </div>
+              <pre style={{whiteSpace:'pre-wrap',fontSize:13,lineHeight:1.7,color:'var(--sub)',margin:0,fontFamily:'inherit'}}>{output}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   FAQ COMPONENT
+═══════════════════════════════════════════════════ */
+function FAQ({q,a}){
+  const [open,setOpen]=useState(false);
+  return(
+    <div className={`faq${open?' open':''}`} onClick={()=>setOpen(!open)}>
+      <div className="faq-q">{q}<span>+</span></div>
+      <div className="faq-a"><p>{a}</p></div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   LANDING PAGE
+═══════════════════════════════════════════════════ */
+function LandingPage({onEnter, theme, setTheme}){
+  return(
+    <div>
+      {/* Nav */}
+      <nav className="lp-nav">
+        <div className="lp-nav-logo">
+          <div className="logo-icon">⚡</div>
+          GigaChad AI
+        </div>
+        <div className="lp-links">
+          <a onClick={()=>document.getElementById('feat')?.scrollIntoView({behavior:'smooth'})}>Features</a>
+          <a onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})}>How It Works</a>
+          <a onClick={()=>document.getElementById('testi')?.scrollIntoView({behavior:'smooth'})}>Testimonials</a>
+          <a onClick={()=>document.getElementById('price')?.scrollIntoView({behavior:'smooth'})}>Pricing</a>
+          <ThemeToggle theme={theme} setTheme={setTheme} />
+          <button className="btn btn-p" style={{padding:'8px 20px',fontSize:13}} onClick={onEnter}>Open App →</button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="lp-hero">
+        <div className="lp-hero-badge"><span className="dot dot-blink"/>Alpha v3.0 — AI-Powered Intelligence</div>
+        <h1>Turn Any Meeting Into<br/><em className="gt">Instant Intelligence</em></h1>
+        <p>Upload meetings, documents, or handwritten notes. Get AI summaries, action items, transcripts, and deep insights — in seconds, not hours.</p>
+        <div className="lp-hero-btns">
+          <button className="btn btn-p btn-big" onClick={onEnter}>⚡ Start For Free</button>
+          <button className="btn btn-out" onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})}>See How It Works ↓</button>
+        </div>
+
+        {/* Mockup */}
+        <div className="lp-mock">
+          <div className="lp-mock-bar">
+            <span style={{background:'#ef4444'}}/><span style={{background:'#f59e0b'}}/><span style={{background:'#22c55e'}}/>
+          </div>
+          <div className="lp-mock-body">
+            <div style={{gridColumn:'1/3'}}>
+              <div className="mk-title" style={{background:'var(--g)',opacity:.3,width:'35%'}}/>
+              <div className="mk-line" style={{width:'95%'}}/><div className="mk-line" style={{width:'80%'}}/><div className="mk-line" style={{width:'68%'}}/>
+            </div>
+            <div>
+              <div className="mk-title"/><div className="mk-line" style={{width:'90%'}}/><div className="mk-line" style={{width:'70%'}}/><div className="mk-line" style={{width:'82%'}}/>
+            </div>
+            <div>
+              <div className="mk-title"/><div className="mk-line" style={{width:'75%'}}/><div className="mk-line" style={{width:'60%'}}/><div className="mk-line" style={{width:'88%'}}/>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trusted */}
+      <div className="lp-trust">
+        <p>Trusted by teams at</p>
+        <div className="lp-trust-row">
+          {['Google','Meta','Stripe','Vercel','Linear','Notion'].map(n=><span key={n}>{n}</span>)}
+        </div>
+      </div>
+
+      <div className="divider"/>
+
+      {/* Features */}
+      <section className="lp-sec" id="feat">
+        <div className="lp-sec-badge">Features</div>
+        <h2>Everything You Need to<br/><em className="gt">Kill Meeting Waste</em></h2>
+        <p>Three powerful AI tools in one platform. Nothing escapes GigaChad.</p>
+        <div className="feat-grid">
+          {[
+            {icon:'🎬',bg:'var(--g-dim)',title:'Meeting & Video Summarizer',desc:'Upload Zoom, Meet, Loom, or any MP4. Get transcripts, speaker diarization, action items, and TL;DR summaries instantly.'},
+            {icon:'📄',bg:'var(--b-dim)',title:'PDF & Document Intelligence',desc:'Drop PDFs, DOCX, or raw text. Choose summary style — executive brief, bullet points, or academic abstract.'},
+            {icon:'✏️',bg:'var(--p-dim)',title:'Notes & AI Writing',desc:'OCR handwritten notes, then summarize, improve, expand, or rewrite. Generate new content from prompts.'},
+            {icon:'🤖',bg:'var(--g-dim)',title:'AI Chat Assistant',desc:'Ask follow-up questions about any content. "What were the risks?" "Who owns the budget?" Get instant answers.'},
+            {icon:'🎯',bg:'var(--a-dim)',title:'Auto-Extracted Actions',desc:'Action items mined with owners and deadlines. Check them off, export to Notion, Jira, or Slack in one click.'},
+            {icon:'🔒',bg:'var(--r-dim)',title:'Privacy & Security',desc:'Data encrypted in transit and at rest. Never stored or used for training. SOC2 compliant. Enterprise-ready.'},
+          ].map((f,i)=>(
+            <div key={i} className="feat">
+              <div className="feat-icon" style={{background:f.bg}}>{f.icon}</div>
+              <h3>{f.title}</h3>
+              <p>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="divider"/>
+
+      {/* How It Works */}
+      <section className="lp-sec" id="how">
+        <div className="lp-sec-badge">How It Works</div>
+        <h2>Three Steps to<br/><em className="gt">Zero Fluff</em></h2>
+        <p>From raw input to actionable intelligence in under 30 seconds.</p>
+        <div className="steps">
+          {[
+            {icon:'📤',title:'Upload Anything',desc:'Drag & drop video, paste a URL, upload a PDF, or photograph handwritten notes. Every format supported.'},
+            {icon:'🧠',title:'AI Processes It',desc:'Transcription, speaker identification, insight extraction, action mining, risk detection, and fluff removal — all automatic.'},
+            {icon:'📋',title:'Get Results Instantly',desc:'TL;DR summaries, action items, transcripts, sentiment analysis, and an AI chat for follow-up questions.'},
+            {icon:'🚀',title:'Ship It Anywhere',desc:'One-click export to Slack, Notion, Jira, PDF, or Markdown. No more meetings about the meeting.'},
+          ].map((s,i)=>(
+            <div key={i} className="step">
+              <span style={{fontSize:26}}>{s.icon}</span>
+              <h3>{s.title}</h3>
+              <p>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats */}
+      <div className="stats-row">
+        {[
+          {num:'50K+',label:'Meetings Summarized'},
+          {num:'4.2M',label:'Action Items Extracted'},
+          {num:'98.6%',label:'Transcription Accuracy'},
+          {num:'12s',label:'Average Processing Time'},
+        ].map((s,i)=>(
+          <div key={i}>
+            <div className="stat-num gt">{s.num}</div>
+            <div className="stat-lbl">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="divider"/>
+
+      {/* Testimonials */}
+      <section className="lp-sec" id="testi">
+        <div className="lp-sec-badge">Testimonials</div>
+        <h2>Loved by Teams<br/><em className="gt">Everywhere</em></h2>
+        <p>What product teams, engineers, and founders say about GigaChad AI.</p>
+        <div className="testi-grid">
+          {[
+            {text:"We spent 30 minutes writing meeting notes. GigaChad does it in 12 seconds with better accuracy. Absolute game-changer for our team.",name:"Sarah M.",role:"VP Product, Stripe",color:"#22c55e",ini:"SM"},
+            {text:"The action item extraction caught commitments people made that even they forgot about. Our accountability improved 3x.",name:"Raj P.",role:"CTO, Linear",color:"#3b82f6",ini:"RP"},
+            {text:"I photograph my whiteboard notes and get a clean summary in seconds. The OCR is flawless. Can't believe this is free.",name:"Ana K.",role:"Design Lead, Vercel",color:"#a78bfa",ini:"AK"},
+            {text:"We replaced Otter, Notion AI, and a manual note-taker with just GigaChad. The ROI is absurd.",name:"James W.",role:"Head of Eng, Notion",color:"#f59e0b",ini:"JW"},
+            {text:"The AI chat feature is magic. I ask 'what did Marcus commit to?' and get the exact answer with timestamps.",name:"Li Z.",role:"PM, Google",color:"#22c55e",ini:"LZ"},
+            {text:"My team processes 20+ client calls daily. GigaChad turned hours of notes into a one-click workflow.",name:"Emma R.",role:"Sales Director, HubSpot",color:"#3b82f6",ini:"ER"},
+          ].map((t,i)=>(
+            <div key={i} className="testi">
+              <div className="stars">★★★★★</div>
+              <div className="testi-text">"{t.text}"</div>
+              <div className="testi-who">
+                <div className="avatar" style={{width:36,height:36,background:`${t.color}18`,border:`1px solid ${t.color}44`,color:t.color,fontSize:12}}>{t.ini}</div>
+                <div>
+                  <div className="testi-name">{t.name}</div>
+                  <div className="testi-role">{t.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="divider"/>
+
+      {/* Pricing */}
+      <section className="lp-sec" id="price">
+        <div className="lp-sec-badge">Pricing</div>
+        <h2>Simple, <em className="gt">Transparent</em> Pricing</h2>
+        <p>Start free. Upgrade when you need more.</p>
+        <div className="price-grid">
+          {[
+            {name:'Free',price:'\$0',per:'/forever',desc:'Perfect for individuals.',pop:false,feats:['5 meetings/month','30 min max recording','All 3 tools','Basic exports','Copy to clipboard'],btn:'ghost',bl:'Get Started Free'},
+            {name:'Pro',price:'\$19',per:'/month',desc:'For power users who run the show.',pop:true,feats:['Unlimited meetings','4 hour max recording','AI Chat assistant','Slack, Notion, Jira export','Speaker diarization','Priority processing','API access'],btn:'fill',bl:'Start Pro Trial ⚡'},
+            {name:'Team',price:'\$49',per:'/month',desc:'For teams that refuse to waste time.',pop:false,feats:['Everything in Pro','Up to 25 members','Shared workspace','Admin dashboard','SSO & SAML','Custom integrations','Dedicated support'],btn:'ghost',bl:'Contact Sales'},
+          ].map((p,i)=>(
+            <div key={i} className={`price${p.pop?' pop':''}`}>
+              <div className="price-name">{p.name}</div>
+              <div className="price-amt">{p.price}<span> {p.per}</span></div>
+              <div className="price-desc">{p.desc}</div>
+              <ul className="price-list">{p.feats.map((f,j)=><li key={j}>{f}</li>)}</ul>
+              <button className={`price-btn ${p.btn}`} onClick={onEnter}>{p.bl}</button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="divider"/>
+
+      {/* FAQ */}
+      <section className="lp-sec">
+        <div className="lp-sec-badge">FAQ</div>
+        <h2>Got Questions?</h2>
+        <p>Everything you need to know about GigaChad AI.</p>
+        <div className="faqs">
+          {[
+            {q:'What file formats are supported?',a:'MP4, MP3, WAV, WEBM for audio/video. PDF, DOCX, TXT for documents. PNG, JPG for handwritten note OCR. You can also paste raw text or YouTube/Loom URLs.'},
+            {q:'How accurate is the transcription?',a:'Our engine achieves 98.6% accuracy on English content. We support 50+ languages with varying accuracy.'},
+            {q:'Is my data private and secure?',a:'All data is encrypted in transit and at rest. We never store recordings after processing. SOC2 Type II compliant.'},
+            {q:'Can I use this for lectures?',a:'Yes! Many students and researchers use GigaChad AI to summarize lectures, extract concepts, and generate study notes.'},
+            {q:'Do you offer an API?',a:'Yes — REST API available on Pro and Team plans. Full documentation at api.gigachad.ai.'},
+            {q:'What about team collaboration?',a:'Team plan includes shared workspaces, vault history, admin controls, and integrations with Slack, Notion, and Jira.'},
+          ].map((f,i)=><FAQ key={i} q={f.q} a={f.a}/>)}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="lp-cta">
+        <h2>Ready to Kill Meeting Waste?</h2>
+        <p>Join 50,000+ professionals who save 5+ hours every week.</p>
+        <button className="btn btn-p btn-big" onClick={onEnter}>⚡ Start For Free — No Card Required</button>
+        <div style={{marginTop:14,fontSize:12,color:'var(--muted)'}}>Free forever · No credit card · 30 second setup</div>
+      </section>
+
+      {/* Footer */}
+      <footer className="lp-ft">
+        <div className="lp-ft-grid">
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+              <div className="logo-icon">⚡</div>
+              <span style={{fontSize:17,fontWeight:900}}>GigaChad AI</span>
+            </div>
+            <p style={{fontSize:13,color:'var(--muted)',lineHeight:1.6,maxWidth:260}}>AI-powered meeting intelligence that turns any content into instant, actionable summaries.</p>
+          </div>
+          <div>
+            <h4>Product</h4>
+            <a>Features</a><a>Pricing</a><a>Changelog</a><a>Roadmap</a><a>API Docs</a>
+          </div>
+          <div>
+            <h4>Resources</h4>
+            <a>Documentation</a><a>Blog</a><a>Support</a><a>Community</a><a>Status</a>
+          </div>
+          <div>
+            <h4>Legal</h4>
+            <a>Privacy Policy</a><a>Terms of Service</a><a>GDPR</a><a>Security</a>
+          </div>
+        </div>
+        <div className="lp-ft-bot">
+          <span>© 2024 GigaChad AI. All rights reserved.</span>
+          <span style={{display:'flex',alignItems:'center',gap:6}}>
+            <span className="dot"/>All systems operational
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   WORKSPACE
+═══════════════════════════════════════════════════ */
+const SECTIONS=[
+  {id:'meeting',icon:'🎬',label:'Meeting & Video',sub:'Summarize recordings & calls'},
+  {id:'docs',icon:'📄',label:'PDF & Docs',sub:'Summarize any document'},
+  {id:'notes',icon:'✏️',label:'Notes & AI Writing',sub:'OCR, rewrite, generate'},
+];
+
+function Workspace({onBack, theme, setTheme}){
+  const [section,setSection]=useState('meeting');
+  const [backendOnline, setBackendOnline]=useState(false);
+  const {items,notify,rm}=useNotify();
+
+  useEffect(() => {
+    function checkBackend() {
+      fetch('http://localhost:8000/health')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.status === 'ok') {
+            setBackendOnline(true);
+          } else {
+            setBackendOnline(false);
+          }
+        })
+        .catch(() => setBackendOnline(false));
+    }
+    checkBackend();
+    const interval = setInterval(checkBackend, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return(
+    <>
+      <Notifs items={items} rm={rm}/>
+      <header className="topbar">
+        <div className="topbar-logo" onClick={onBack} title="Back to home">
+          <div className="logo-icon">⚡</div>
+          GigaChad AI
+        </div>
+        <nav className="topbar-nav">
+          {SECTIONS.map(s=>(
+            <button key={s.id} className={`nav-btn${section===s.id?' active':''}`} onClick={()=>setSection(s.id)}>
+              {section===s.id&&<span className="dot"/>}
+              {s.icon} {s.label}
+            </button>
+          ))}
+        </nav>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <div className={`badge ${backendOnline?'bg':'b-amber'}`} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,padding:'4px 10px'}} title={backendOnline ? "Connected to local FastAPI backend on port 8000" : "Run start_server.bat to connect local Python backend"}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:backendOnline?'#22c55e':'#f59e0b',display:'inline-block'}}></span>
+            {backendOnline ? 'Backend Online (FastAPI)' : 'Demo Mode (Offline)'}
+          </div>
+          <ThemeToggle theme={theme} setTheme={setTheme} />
+          <button className="btn btn-s" onClick={onBack} style={{gap:6}}>← Home</button>
+        </div>
+      </header>
+
+      {SECTIONS.map(s=>(
+        <div key={s.id} className={`tool-page${section===s.id?' active':''}`}>
+          <div className="hero-banner">
+            <div className="eyebrow"><span className="dot"/>{s.sub}</div>
+            <h1>
+              {s.id==='meeting'&&<><em>Meeting & Video</em> Summarizer</>}
+              {s.id==='docs'&&<><em>PDF & Document</em> Summarizer</>}
+              {s.id==='notes'&&<><em>Notes & AI Writing</em> Assistant</>}
+            </h1>
+            <p>
+              {s.id==='meeting'&&'Upload any recording, call, or lecture. Get a summary, action items, and full transcript in seconds.'}
+              {s.id==='docs'&&'Upload PDF, Word, or raw text. Get instant summaries, key points, and abstracts.'}
+              {s.id==='notes'&&'Transcribe handwritten notes via OCR, then summarize, improve, expand, or generate new text.'}
+            </p>
+          </div>
+          {s.id==='meeting'&&<MeetingSection notify={notify} backendOnline={backendOnline}/>}
+          {s.id==='docs'&&<DocSection notify={notify} backendOnline={backendOnline}/>}
+          {s.id==='notes'&&<NotesSection notify={notify} backendOnline={backendOnline}/>}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   ROOT APP
+═══════════════════════════════════════════════════ */
+function App(){
+  const [theme, setTheme] = useState('dark');
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  const [page,setPage]=useState('landing');
+  function go(p){setPage(p);window.scrollTo({top:0,behavior:'smooth'});}
+  return page==='landing'
+    ? <LandingPage onEnter={()=>go('workspace')} theme={theme} setTheme={setTheme}/>
+    : <Workspace onBack={()=>go('landing')} theme={theme} setTheme={setTheme}/>;
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+
+
+
+
+
+</script>
+</body>
+</html>
