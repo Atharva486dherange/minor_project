@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GigaChad AI — Meeting, Document & Notes Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -120,6 +122,12 @@ function StatBar({pct,color}){
 /* ═══════════════════════════════════════════════════
    DATA
 ═══════════════════════════════════════════════════ */
+
+const sentences=s=>(String(s).match(/.+?[.!?](?=\s|$)/g)||[String(s)]).map(x=>x.trim());
+const firstN=(s,k)=>sentences(s).slice(0,k).join(' ');
+function hi(t){
+  return String(t).split(/((?<![A-Za-z\d])\$?\d+(?:[.,]\d+)*[%KMBk]?(?![A-Za-z\d]))/g).map((p,i)=>i%2?<mark key={i} className="hl">{p}</mark>:p);
+}
 
 const EXPLAIN_KNOWLEDGE = {
   0: {
@@ -573,254 +581,167 @@ function MeetingSection({notify, backendOnline}){
     </div>
   );
 
-  /* ── RESULTS ── */
-  const TABS=['⚡ Summary','🎯 Actions','🗣️ Speakers','📝 Transcript','🤖 Ask AI'];
-  return(
-    <div className="a-up" style={{maxWidth:800,margin:'0 auto'}}>
-      {/* Stats bar */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:10,marginBottom:20}}>
-        {[
-          {l:'Duration',v:'18m 45s',c:'var(--b)'},
-          {l:'Effective',v:'14m 33s',c:'var(--g)'},
-          {l:'Saved',v:'4m 12s',c:'var(--a)'},
-          {l:'Speakers',v:'4',c:'var(--p)'},
-          {l:'Actions',v:'6',c:'var(--cy)'},
-          {l:'Confidence',v:'98.2%',c:'var(--g)'},
-        ].map((s,i)=>(
-          <div key={i} className={`card card-lift a-up dl${i+1}`} style={{padding:14,textAlign:'center'}}>
-            <div style={{fontWeight:900,fontSize:20,color:s.c,letterSpacing:'-0.5px'}}>{s.v}</div>
-            <div style={{fontSize:10,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',letterSpacing:'.6px',marginTop:2}}>{s.l}</div>
-          </div>
-        ))}
-      </div>
+  /* ── RESULTS (MODERN DASHBOARD MATCHING REFERENCE MOCKUP) ── */
+  const transcriptList = customTranscript || [
+    { id: 1, time: '2:25 PM', speaker: 'Prof. Alan', color: '#2563eb', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&h=60&fit=crop&crop=faces', text: 'Today we will cover deep neural networks and why the backpropagation algorithm is so critical...' },
+    { id: 2, time: '2:28 PM', speaker: 'Prof. Alan', color: '#2563eb', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&h=60&fit=crop&crop=faces', text: "The loss function computes the error of the network, which backpropagation then minimizes across layer weights.", isKey: true, explainPrompt: "Think of Stochastic Gradient Descent (SGD) as taking small steps down a foggy hill to find the lowest point (the error), checking your direction after every single step." },
+    { id: 3, time: '2:31 PM', speaker: 'Jordan', color: '#059669', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=faces', text: 'Can you explain how SGD plays a part in this?' },
+    { id: 4, time: '2:34 PM', speaker: 'Prof. Alan', color: '#2563eb', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&h=60&fit=crop&crop=faces', text: 'SGD approximates the gradient using a random subset of training data, drastically reducing compute time.' }
+  ];
 
-      <div className="card" style={{padding:28}}>
-        {/* Tab bar */}
-        <div style={{display:'flex',gap:6,background:'var(--surf)',padding:4,borderRadius:'',overflow:'auto',marginBottom:24}}>
-          {TABS.map((t,i)=>{
-            const key=['summary','actions','speakers','transcript','ai'][i];
-            return <button key={i} className={`res-tab${resTab===key?' active':''}`} onClick={()=>setResTab(key)}>{t}</button>;
-          })}
+  const actionsList = customActions || [
+    { id: 1, name: 'Plox Kloeck', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=60&h=60&fit=crop', deadline: 'Today', status: 'today', checked: true },
+    { id: 2, name: 'Alex Autos', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=60&h=60&fit=crop', deadline: 'Oct 24', status: 'date', checked: true },
+    { id: 3, name: 'Alex Jordan', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&h=60&fit=crop', deadline: 'Oct 24', status: 'date', checked: true },
+    { id: 4, name: 'Clase Dert', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=60&h=60&fit=crop', deadline: 'Oct 24', status: 'date', checked: false },
+    { id: 5, name: 'Alesin Wartlow', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=60&h=60&fit=crop', deadline: 'Completed', status: 'completed', checked: true },
+    { id: 6, name: 'Alers Jordan', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=60&h=60&fit=crop', deadline: 'Completed', status: 'completed', checked: false }
+  ];
+
+  return (
+    <div className="a-up" style={{width:'100%', maxWidth:1440, margin:'0 auto'}}>
+      {/* Top Breadcrumb & Control Bar */}
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, flexWrap:'wrap', gap:10}}>
+        <div style={{display:'flex', alignItems:'center', gap:10}}>
+          <button className="btn btn-s" onClick={()=>{setScreen('input');setFile(null);setUrl('');notify('Ready for new meeting');}} style={{borderRadius:8, padding:'6px 14px', fontSize:13, fontWeight:600}}>
+            ← Upload Recording
+          </button>
+          <span style={{fontSize:13, color:'var(--app-text-muted)'}}>
+            {file ? file.name : 'Lecture_04_Intro_to_AI.mp4'} • 45:00
+          </span>
         </div>
 
-        {/* Export bar */}
-        <div style={{display:'flex',gap:8,marginBottom:24,flexWrap:'wrap'}}>
-          {[{l:'Copy',ic:I.copy},{l:'PDF',ic:I.dl},{l:'Slack ⚡',ic:I.send},{l:'Notion 📝',ic:I.doc}].map((b,i)=>(
-            <button key={i} className="btn btn-s" onClick={()=>notify(`${b.l} — done!`)}><Ic d={b.ic} size={12}/>{b.l}</button>
-          ))}
-          <button className="btn btn-s" style={{marginLeft:'auto'}} onClick={()=>{setScreen('input');setFile(null);setUrl('');notify('🔄 New session');}}>
-            <Ic d={I.refresh} size={12}/> New
+        <div style={{display:'flex', alignItems:'center', gap:8}}>
+          <button className="btn btn-s" onClick={()=>{window.print();}} style={{borderRadius:8, padding:'6px 14px', fontSize:13}}>
+            📥 Export PDF
+          </button>
+          <button className="btn btn-s" onClick={()=>{navigator.clipboard?.writeText(customSummary && customSummary.bullets ? customSummary.bullets.join('\n') : 'Summary copied'); notify('Summary copied to clipboard');}} style={{borderRadius:8, padding:'6px 14px', fontSize:13}}>
+            📋 Copy All
           </button>
         </div>
+      </div>
 
-        {/* Summary */}
-        {resTab==='summary'&&(
-          <div className="a-scale">
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:10}}>
-              <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <span style={{fontSize:22}}>⚡</span>
-                <span style={{fontWeight:800,fontSize:17}}>{customSummary ? 'Real AI Summary (FastAPI)' : 'TL;DR Summary'}</span>
-                <span className="badge ba">{customSummary ? 'Live Model Output' : '15-second read'}</span>
+      {/* 2-Column Responsive Layout Matching Mockup */}
+      <div className="dash-grid" style={{padding:0}}>
+        {/* LEFT COLUMN: Video Player + Transcript */}
+        <div style={{display:'flex', flexDirection:'column', gap:20}}>
+          {/* 1. Video Player Container */}
+          <div className="video-player-container">
+            <div className="video-player-top">
+              <div className="video-file-tag">
+                <span>📄</span> {file ? file.name : 'Lecture_04_Intro_to_AI.mp4'}
               </div>
-              {customSummary && <span className="badge bg">✓ Real File Processed</span>}
-            </div>
-
-            {customSummary && customSummary.executive && (
-              <div style={{padding:'16px 18px',background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,marginBottom:16,borderLeft:'3px solid var(--g)'}}>
-                <div style={{fontSize:12,fontWeight:700,color:'var(--g)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>📊 Executive Overview:</div>
-                <p style={{fontSize:13,lineHeight:1.7,color:'var(--text)',margin:0}}>{customSummary.executive}</p>
-              </div>
-            )}
-
-            {((customSummary && customSummary.bullets && customSummary.bullets.length)
-              ? customSummary.bullets.map((b, idx) => ({ t: b, c: idx % 3 === 0 ? '#22c55e' : idx % 3 === 1 ? '#3b82f6' : '#a78bfa' }))
-              : MEETING_TLDR
-            ).map((item,i)=>(
-              <div key={i} className={`a-up dl${Math.min(i+1,6)}`} style={{display:'flex',alignItems:'flex-start',gap:14,padding:'14px 16px',background:'var(--surf)',borderRadius:10,marginBottom:10,border:'1px solid var(--border)',position:'relative',overflow:'hidden'}}>
-                <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,background:item.c,borderRadius:'3px 0 0 3px'}}/>
-                <div style={{width:28,height:28,borderRadius:8,background:`${item.c}18`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:12,color:item.c,flexShrink:0}}>{i+1}</div>
-                <p style={{fontSize:13,lineHeight:1.7,margin:0,flex:1}}>{item.t}</p>
-              </div>
-            ))}
-
-            {/* Anchored Notices if real file */}
-            {customSummary && customSummary.anchored_notices && customSummary.anchored_notices.length > 0 && (
-              <div style={{marginTop:16,padding:'14px 16px',background:'var(--card2)',border:'1px solid var(--a-dim)',borderRadius:10,borderLeft:'3px solid var(--a)'}}>
-                <div style={{fontSize:12,fontWeight:700,color:'var(--a)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>📌 Critical Notices & Deadlines:</div>
-                {customSummary.anchored_notices.map((not, ni)=>(
-                  <div key={ni} style={{fontSize:12,color:'var(--sub)',lineHeight:1.6,marginBottom:4}}>• {not}</div>
-                ))}
-              </div>
-            )}
-
-            {/* AI insights */}
-            <div style={{marginTop:20,padding:'16px 18px',background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10}}>
-              <div className="sec" style={{marginBottom:12}}>AI Insights</div>
-              {(customSummary && customSummary.bullets ? [
-                "Key commitments and action milestones identified across the session",
-                "Full NLP summarization generated locally using transformer models",
-                "Speaker turns and sentiment mapped in real-time"
-              ] : MEETING_AI).map((ins,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:8,fontSize:13,color:'var(--sub)',lineHeight:1.6}}>
-                  <span style={{color:'var(--g)',flexShrink:0}}>→</span>
-                  <span>{ins}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        {resTab==='actions'&&(
-          <div className="a-scale">
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
-              <span style={{fontSize:22}}>🎯</span>
-              <span style={{fontWeight:800,fontSize:17}}>Action Items</span>
-              <span className="badge bg">{MEETING_ACTIONS.length} tasks</span>
-              <span className="badge br" style={{marginLeft:4}}>{MEETING_ACTIONS.filter(a=>a.p==='high').length} high priority</span>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              {MEETING_ACTIONS.map((a,i)=>(
-                <div key={a.id} className={`act-row a-up dl${i+1}`}
-                  style={{display:'flex',alignItems:'center',gap:14,padding:'12px 14px',border:'1px solid var(--border)',borderRadius:'',background:checked.includes(a.id)?'var(--g-dim)':'var(--surf)'}}>
-                  <button onClick={()=>toggleCheck(a.id)} style={{width:20,height:20,borderRadius:6,border:`2px solid ${checked.includes(a.id)?'var(--g)':'var(--border2)'}`,background:checked.includes(a.id)?'var(--g)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all .15s',flexShrink:0}}>
-                    {checked.includes(a.id)&&<Ic d={I.check} size={12} s="#fff" sw={3}/>}
-                  </button>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,textDecoration:checked.includes(a.id)?'line-through':'none',opacity:checked.includes(a.id)?.5:1,marginBottom:3}}>{a.t}</div>
-                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                      <span className="chip" style={{fontSize:11}}>{a.o}</span>
-                      <span className="badge ba">{a.d}</span>
-                      <span className={`badge ${a.p==='high'?'br':a.p==='medium'?'ba':'bg'}`} style={{textTransform:'capitalize'}}>{a.p}</span>
-                      <span className={`badge ${a.s==='in-prog'?'bb':a.s==='pending'?'ba':'bp'}`}>{a.s==='in-prog'?'⚡ Active':a.s==='pending'?'⏳ Pending':'💤 Not Started'}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Speakers */}
-        {resTab==='speakers'&&(
-          <div className="a-scale">
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
-              <span style={{fontSize:22}}>🗣️</span>
-              <span style={{fontWeight:800,fontSize:17}}>Speaker Analysis</span>
-              <span className="badge bp">{MEETING_SPEAKERS.length} speakers</span>
-            </div>
-            {/* Talk time bars */}
-            <div style={{marginBottom:24,display:'flex',flexDirection:'column',gap:14}}>
-              {MEETING_SPEAKERS.map((sp,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'center',gap:14}}>
-                  <div className="avatar" style={{width:34,height:34,background:`${sp.color}18`,border:`2px solid ${sp.color}44`,color:sp.color,fontSize:12}}>{initials(sp.name)}</div>
-                  <div style={{width:100,fontSize:13,fontWeight:700,flexShrink:0}}>{sp.name}</div>
-                  <StatBar pct={sp.talk} color={sp.color}/>
-                  <span style={{fontSize:12,fontWeight:800,color:sp.color,width:40,textAlign:'right'}}>{sp.talk}%</span>
-                </div>
-              ))}
-            </div>
-            {/* Expandable quotes */}
-            {MEETING_SPEAKERS.map((sp,si)=>{
-              const quotes=MEETING_TRANSCRIPT.filter(t=>t.speaker===sp.name);
-              return(
-                <div key={si} style={{marginBottom:10,border:'1px solid var(--border)',borderRadius:'',overflow:'hidden',background:'var(--surf)'}}>
-                  <div className="acc-head" onClick={()=>setOpenSp(openSp===si?-1:si)}>
-                    <div className="avatar" style={{width:36,height:36,background:`${sp.color}18`,border:`2px solid ${sp.color}44`,color:sp.color,fontSize:12}}>{initials(sp.name)}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontWeight:800,fontSize:14}}>{sp.name}</div>
-                      <div style={{fontSize:11,color:'var(--muted)'}}>{sp.role} · {quotes.length} quotes</div>
-                    </div>
-                    <span className="badge bg">{sp.talk}%</span>
-                    <Ic d={openSp===si?I.chevU:I.chevD} size={15} s="var(--muted)"/>
-                  </div>
-                  {openSp===si&&(
-                    <div className="a-up" style={{padding:'4px 18px 16px'}}>
-                      {quotes.map((q,qi)=>(
-                        <div key={qi} className="sp-q" style={{borderLeftColor:sp.color,background:`${sp.color}08`,marginTop:10}}>
-                          <div style={{display:'flex',gap:8,marginBottom:6}}>
-                            <span className="badge bg" style={{fontSize:10,fontFamily:'monospace'}}>[{q.time}]</span>
-                          </div>
-                          <p style={{fontSize:13,lineHeight:1.65,margin:0,fontStyle:'italic',color:'var(--sub)'}}>"{q.text}"</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Transcript */}
-        {resTab==='transcript'&&(
-          <div className="a-scale">
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:10}}>
-              <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <span style={{fontSize:22}}>📝</span>
-                <span style={{fontWeight:800,fontSize:17}}>Full Transcript</span>
-                <span className="badge bg">Cleaned</span>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <span className="badge bp" style={{display:'flex',alignItems:'center',gap:4,fontSize:11}}>
-                  <span>💡</span> Click "Explain with AI" on any line
+              <div style={{display:'flex', gap:8}}>
+                <span style={{background:'rgba(0,0,0,0.6)', color:'#fff', padding:'4px 8px', borderRadius:6, fontSize:11}}>
+                  HD 1080p
                 </span>
               </div>
             </div>
-            <div style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'18px 20px',maxHeight:480,overflowY:'auto',display:'flex',flexDirection:'column',gap:12}}>
-              {(customTranscript || MEETING_TRANSCRIPT).map((t,i)=>{
-                const exp = EXPLAIN_KNOWLEDGE[i] || customExplain[i];
-                const isExp = explainingIdx === i;
+
+            {/* Video Screen Content (Lecture Slide & Camera View) */}
+            <div className="video-screen-content">
+              <div style={{textAlign:'center', background:'rgba(255,255,255,0.04)', padding:'16px 24px', borderRadius:12, border:'1px solid rgba(255,255,255,0.1)'}}>
+                <div style={{fontSize:15, fontWeight:700, marginBottom:10, color:'#93c5fd'}}>Neural Networks Architecture</div>
+                <svg width="220" height="90" viewBox="0 0 220 90">
+                  <circle cx="30" cy="20" r="10" fill="#3b82f6" opacity="0.8"/>
+                  <circle cx="30" cy="50" r="10" fill="#3b82f6" opacity="0.8"/>
+                  <circle cx="30" cy="80" r="10" fill="#3b82f6" opacity="0.8"/>
+                  <circle cx="110" cy="35" r="10" fill="#10b981" opacity="0.8"/>
+                  <circle cx="110" cy="65" r="10" fill="#10b981" opacity="0.8"/>
+                  <circle cx="190" cy="50" r="10" fill="#8b5cf6" opacity="0.9"/>
+                  <line x1="40" y1="20" x2="100" y2="35" stroke="#64748b" strokeWidth="1.5"/>
+                  <line x1="40" y1="50" x2="100" y2="35" stroke="#64748b" strokeWidth="1.5"/>
+                  <line x1="40" y1="50" x2="100" y2="65" stroke="#64748b" strokeWidth="1.5"/>
+                  <line x1="40" y1="80" x2="100" y2="65" stroke="#64748b" strokeWidth="1.5"/>
+                  <line x1="120" y1="35" x2="180" y2="50" stroke="#64748b" strokeWidth="1.5"/>
+                  <line x1="120" y1="65" x2="180" y2="50" stroke="#64748b" strokeWidth="1.5"/>
+                </svg>
+              </div>
+
+              <div style={{position:'relative', width:140, height:100, borderRadius:8, overflow:'hidden', border:'2px solid rgba(255,255,255,0.2)', background:'#1e293b'}}>
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=150&fit=crop" style={{width:'100%', height:'100%', objectFit:'cover'}} alt="Speaker"/>
+                <div style={{position:'absolute', bottom:4, left:6, background:'rgba(0,0,0,0.7)', padding:'2px 6px', borderRadius:4, fontSize:10}}>Dr. Alan</div>
+              </div>
+            </div>
+
+            {/* Bottom Video Controls Bar */}
+            <div className="video-controls-bottom">
+              <div className="video-progress-line">
+                <div className="video-progress-fill"/>
+              </div>
+              <div className="video-buttons-row">
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <span style={{cursor:'pointer', fontSize:14}}>▶</span>
+                  <span style={{cursor:'pointer', fontSize:14}}>🔊</span>
+                  <span>14:22 / 45:00</span>
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <span className="backend-badge-pill" style={{padding:'2px 8px', fontSize:11, background:'rgba(16,185,129,0.2)', color:'#34d399'}}>
+                    ● Active Speaker: Dr. Alan
+                  </span>
+                  <span style={{cursor:'pointer'}}>1x</span>
+                  <span style={{cursor:'pointer'}}>⚙</span>
+                  <span style={{cursor:'pointer'}}>⛶</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Whisper Speech-to-Text Transcript Container */}
+          <div className="dash-card transcript-card">
+            <div className="transcript-header">
+              <div className="transcript-title">Whisper Speech-to-Text Transcript</div>
+              <div style={{display:'flex', gap:6}}>
+                <button className="btn btn-s" style={{padding:'4px 10px', fontSize:12, borderRadius:6}} onClick={()=>notify('Transcript search ready')}>
+                  🔍 Search
+                </button>
+                <span style={{fontSize:18, color:'var(--app-text-muted)', cursor:'pointer'}}>⋮</span>
+              </div>
+            </div>
+
+            {/* Dialogues Stream */}
+            <div className="transcript-stream">
+              {transcriptList.map((item, idx) => {
+                const isExp = explainingIdx === idx;
+                const expData = EXPLAIN_KNOWLEDGE[idx] || customExplain[idx] || {
+                  eli5: item.explainPrompt || "Think of Stochastic Gradient Descent (SGD) as taking small steps down a foggy hill to find the lowest point (the error), checking your direction after every single step."
+                };
+
                 return (
-                  <div key={i} className={`a-up dl${Math.min(i+1,6)}`} style={{display:'flex',flexDirection:'column',gap:8,padding:'10px 14px',borderRadius:'var(--radius)',background:isExp?'var(--card2)':'transparent',border:isExp?'1px solid var(--p-dim)':'1px solid transparent',transition:'all .2s ease'}}>
-                    <div style={{display:'flex',gap:12,alignItems:'flex-start',justifyContent:'space-between'}}>
-                      <div style={{display:'flex',gap:12,alignItems:'flex-start',flex:1}}>
-                        <span className="badge bg b-click" style={{fontFamily:'monospace',flexShrink:0,fontSize:10}}>[{t.time}]</span>
-                        <p style={{margin:0,fontSize:13,lineHeight:1.65}}>
-                          <strong style={{color:t.color,fontWeight:800}}>{t.speaker}:</strong>{' '}{t.text}
-                        </p>
+                  <div key={idx} className="dialogue-item">
+                    <div className="dialogue-meta">
+                      <span className="dialogue-time">{item.time}</span>
+                      <div className="speaker-pill" style={{background: item.color || '#2563eb'}}>
+                        <img src={item.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=40&h=40&fit=crop'} style={{width:16, height:16, borderRadius:'50%'}} alt="Avatar"/>
+                        <span>{item.speaker}</span>
                       </div>
+                    </div>
+
+                    <div className={`dialogue-bubble ${item.isKey || isExp ? 'highlighted' : ''}`}>
+                      <span>{item.text}</span>
                       <button 
-                        className="btn btn-s"
-                        onClick={()=>toggleExplain(i, t.text)}
-                        style={{padding:'4px 10px',fontSize:11,gap:4,flexShrink:0,borderRadius:6,background:isExp?'var(--p-dim)':'var(--surf)',color:isExp?'var(--p)':'var(--text)',border:'1px solid var(--border)'}}
-                        title="Explain this point in plain English using AI">
-                        💡 {isExp ? 'Hide' : 'Explain with AI'}
+                        className="inline-explain-btn"
+                        onClick={() => toggleExplain(idx, item.text)}
+                        title="Click to view instant plain-English concept explanation">
+                        💡 Explain with AI (ELI5)
                       </button>
                     </div>
 
-                    {isExp && exp && (
-                      <div className="a-up" style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',marginTop:4}}>
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-                          <div style={{display:'flex',alignItems:'center',gap:6}}>
-                            <span style={{fontSize:16}}>🎓</span>
-                            <span style={{fontWeight:800,fontSize:13,color:'var(--p)'}}>AI Concept Explainer (Student Study Mode)</span>
+                    {/* AI Explanation Tooltip Box */}
+                    {(isExp || (idx === 1 && explainingIdx === null)) && (
+                      <div className="eli5-explanation-box a-up">
+                        <div className="eli5-box-head">
+                          <div className="eli5-box-title">
+                            <span>💡</span> AI explanation (ELI5)
                           </div>
-                          <button className="btn btn-s" onClick={()=>askAboutPoint(t.text)} style={{padding:'3px 8px',fontSize:10,gap:4}}>
-                            💬 Ask in Chat →
-                          </button>
+                          <span 
+                            style={{cursor:'pointer', fontSize:15, fontWeight:700}}
+                            onClick={() => setExplainingIdx(isExp ? -1 : idx)}>
+                            ✕
+                          </span>
                         </div>
-
-                        <div style={{fontSize:12,lineHeight:1.6,marginBottom:10,padding:'8px 12px',background:'var(--card2)',borderRadius:8,borderLeft:'3px solid var(--p)'}}>
-                          <strong style={{color:'var(--p)',display:'block',marginBottom:2}}>🍼 Plain English (ELI5):</strong>
-                          {exp.eli5}
-                        </div>
-
-                        {exp.terms && exp.terms.length > 0 && (
-                          <div style={{marginBottom:10}}>
-                            <div style={{fontSize:11,fontWeight:700,color:'var(--sub)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>🔍 Key Jargon Defined:</div>
-                            <div style={{display:'flex',flexDirection:'column',gap:4}}>
-                              {exp.terms.map((termItem, ti)=>(
-                                <div key={ti} style={{fontSize:11,lineHeight:1.5,padding:'4px 8px',background:'rgba(255,255,255,.02)',borderRadius:6}}>
-                                  <strong style={{color:'var(--g)'}}>{termItem.term}:</strong> <span style={{color:'var(--sub)'}}>{termItem.def}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div style={{fontSize:11,color:'var(--muted)',lineHeight:1.5,borderTop:'1px solid var(--border)',paddingTop:8}}>
-                          <strong style={{color:'var(--text)'}}>🎯 Why It Matters:</strong> {exp.why}
+                        <div className="eli5-box-body">
+                          {expData.eli5}
                         </div>
                       </div>
                     )}
@@ -828,40 +749,107 @@ function MeetingSection({notify, backendOnline}){
                 );
               })}
             </div>
-          </div>
-        )}
 
-        {/* AI Chat */}
-        {resTab==='ai'&&(
-          <div className="a-scale">
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
-              <span style={{fontSize:22}}>🤖</span>
-              <span style={{fontWeight:800,fontSize:17}}>Ask AI About This Meeting</span>
-            </div>
-            <div style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:'',padding:'18px',minHeight:260,maxHeight:360,overflowY:'auto',display:'flex',flexDirection:'column',gap:10,marginBottom:14}}>
-              {aiMsgs.map(m=>(
-                <div key={m.id} className={`ai-msg ${m.role}`}>{m.text}</div>
-              ))}
-            </div>
-            <div style={{display:'flex',gap:10}}>
-              <div className="input-wrap" style={{flex:1}}>
-                <input value={aiQ} onChange={e=>setAiQ(e.target.value)} placeholder="Ask anything about this meeting…"
-                  onKeyDown={e=>e.key==='Enter'&&sendAI()}/>
-              </div>
-              <button className="btn btn-p" style={{padding:'0 20px'}} onClick={sendAI}>
-                <Ic d={I.send} size={16} s="#fff"/>
+            {/* Bottom Interactive Q&A Input */}
+            <div className="transcript-chat-bar">
+              <input 
+                type="text" 
+                className="transcript-chat-input"
+                placeholder="Ask anything about this meeting or lecture..."
+                value={aiQ}
+                onChange={(e) => setAiQ(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendAI()}
+              />
+              <button className="transcript-chat-btn" onClick={sendAI}>
+                Send →
               </button>
             </div>
-            <div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}>
-              {['What are the main risks?','Who has the most action items?','Summarize in one sentence'].map((q,i)=>(
-                <button key={i} className="pill" onClick={()=>{setAiQ(q);}}>{q}</button>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Executive Summary + Keyword Tags + Action Items */}
+        <div className="side-panel-column">
+          {/* 1. Executive TL;DR Summary Card */}
+          <div className="dash-card">
+            <div className="summary-widget-head">
+              <div className="summary-widget-title">Executive TL;DR Summary</div>
+              <div style={{display:'flex', gap:8, color:'var(--app-text-muted)'}}>
+                <span style={{cursor:'pointer'}} title="Copy summary" onClick={()=>{navigator.clipboard?.writeText(customSummary && customSummary.executive ? customSummary.executive : 'Multi-point concise summarization in bullet points.'); notify('Executive summary copied');}}>📋</span>
+                <span style={{cursor:'pointer'}}>⋮</span>
+              </div>
+            </div>
+
+            <ul className="summary-bullets-list">
+              {((customSummary && customSummary.bullets && customSummary.bullets.length)
+                ? customSummary.bullets
+                : [
+                  "Multi-point concise summarization in bullet points, and counts.",
+                  "Core foundation of deep neural networks with backpropagation and parameter optimization.",
+                  "Loss function gradient estimation using stochastic mini-batches to prevent memory saturation."
+                ]
+              ).map((b, bi) => (
+                <li key={bi}>{b}</li>
+              ))}
+            </ul>
+
+            <div className="summary-slider-label">
+              <span>Summary Length</span>
+              <span>(~15%)</span>
+            </div>
+            <input type="range" min="10" max="50" defaultValue="15" style={{width:'100%', accentColor:'var(--app-blue)'}}/>
+          </div>
+
+          {/* 2. Keyword Tags Card */}
+          <div className="dash-card">
+            <div className="summary-widget-head">
+              <div className="summary-widget-title">Keyword Tags</div>
+            </div>
+            <div className="keyword-tags-cloud">
+              {['#NeuralNetworks', '#SaaS', '#FastAPI', '#Optimization', '#SGD', '#Backpropagation'].map((tag, ti) => (
+                <span key={ti} className="keyword-tag-pill">{tag}</span>
               ))}
             </div>
           </div>
-        )}
+
+          {/* 3. Action Items & Deadlines Card */}
+          <div className="dash-card">
+            <div className="summary-widget-head">
+              <div className="summary-widget-title">Action Items & Deadlines</div>
+              <span style={{cursor:'pointer', color:'var(--app-text-muted)'}}>⋮</span>
+            </div>
+
+            <div className="action-items-table">
+              <div style={{display:'flex', justifyContent:'space-between', padding:'4px 6px', fontSize:11, fontWeight:700, color:'var(--app-text-muted)', borderBottom:'1px solid var(--app-card-border)', marginBottom:4}}>
+                <span>✓ Assignee</span>
+                <span>Deadline</span>
+              </div>
+
+              {actionsList.map((item, ai) => (
+                <div key={ai} className="action-item-row">
+                  <div className="action-assignee-col">
+                    <input 
+                      type="checkbox" 
+                      defaultChecked={item.checked} 
+                      style={{accentColor:'var(--app-blue)', cursor:'pointer'}}
+                    />
+                    <img src={item.avatar} className="action-avatar-sm" alt={item.name}/>
+                    <span style={{fontWeight:600}}>{item.name}</span>
+                  </div>
+
+                  <div>
+                    <span className={`deadline-badge ${item.status}`}>
+                      {item.deadline}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
+}
 }
 
 /* ═══════════════════════════════════════════════════
@@ -875,6 +863,9 @@ function DocSection({notify, backendOnline}){
   const [screen,setScreen]=useState('input');
   const [pct,setPct]=useState(0);
   const docInputRef = useRef(null);
+  const [len,setLen]=useState('medium');
+  const [srcWords,setSrcWords]=useState(0);
+  const [speaking,setSpeaking]=useState(false);
   const [customSummary, setCustomSummary] = useState(null);
 
   function loadSample(e){
@@ -926,6 +917,7 @@ function DocSection({notify, backendOnline}){
       }
     }
 
+    setSrcWords(docText.split(/\s+/).filter(Boolean).length);
     if(docText && docText.length >= 10){
       try {
         setPct(65);
@@ -1024,41 +1016,48 @@ function DocSection({notify, backendOnline}){
     </div>
   );
 
-  const displayBullets = (customSummary && customSummary.bullets && customSummary.bullets.length) 
-    ? customSummary.bullets 
-    : DOC_BULLETS;
-  const displayExec = (customSummary && customSummary.executive) 
-    ? customSummary.executive 
-    : DOC_EXEC;
-  const displayAbstract = (customSummary && customSummary.executive)
-    ? customSummary.executive
-    : DOC_ABSTRACT;
-
-  const content = style==='bullets' ? displayBullets : style==='exec' ? [displayExec] : [displayAbstract];
+  const displayBullets=(customSummary&&customSummary.bullets&&customSummary.bullets.length)?customSummary.bullets:DOC_BULLETS;
+  const displayExec=(customSummary&&customSummary.executive)?customSummary.executive:DOC_EXEC;
+  const displayAbstract=(customSummary&&customSummary.executive)?customSummary.executive:DOC_ABSTRACT;
+  const nB=len==='short'?3:len==='medium'?4:99, nS=len==='short'?1:len==='medium'?2:99;
+  const content=style==='bullets'?displayBullets.slice(0,nB):style==='exec'?[firstN(displayExec,nS)]:[firstN(displayAbstract,nS)];
+  const sumWords=content.join(' ').split(/\s+/).filter(Boolean).length;
+  const pct=srcWords>0?Math.max(0,Math.round(100-sumWords/srcWords*100)):null;
+  const plain=style==='bullets'?content.map(x=>'- '+x).join('\n'):content[0];
+  function exportDoc(l){
+    if(l==='Copy'){navigator.clipboard?.writeText(plain);notify('Summary copied');}
+    else if(l==='Markdown'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['# Summary\n\n'+plain],{type:'text/markdown'}));a.download='summary.md';a.click();notify('Saved summary.md');}
+    else window.print();
+  }
+  function listen(){
+    const s=window.speechSynthesis; if(!s){notify('Listening is not supported in this browser',true);return;}
+    if(s.speaking){s.cancel();setSpeaking(false);return;}
+    const u=new SpeechSynthesisUtterance(content.join(' ')); u.onend=()=>setSpeaking(false); s.speak(u); setSpeaking(true);
+  }
   return(
     <div className="a-up" style={{maxWidth:700,margin:'0 auto'}}>
-      <div className="card" style={{padding:28}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
-          <span style={{fontSize:22}}>📄</span>
-          <span style={{fontWeight:800,fontSize:17}}>Document Summary</span>
-          <span className="badge bb">{style}</span>
+      <div className="res">
+        <div className="res-top">
+          <div className="res-file"><span className="fi">📄</span><div><b>{file?file.name:'Pasted text'}</b><small>{srcWords>0?`${srcWords.toLocaleString()} words read`:'Sample document'}</small></div></div>
+          <button className="btn btn-s" onClick={()=>{window.speechSynthesis&&window.speechSynthesis.cancel();setSpeaking(false);setScreen('input');setFile(null);setText('');setRealDocFile(null);}}><Ic d={I.refresh} size={12}/> New summary</button>
         </div>
-        <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
-          {[{l:'Copy',ic:I.copy},{l:'PDF',ic:I.dl},{l:'Markdown',ic:I.doc}].map((b,i)=>(
-            <button key={i} className="btn btn-s" onClick={()=>notify(`${b.l} — done!`)}><Ic d={b.ic} size={12}/>{b.l}</button>
-          ))}
-          <button className="btn btn-s" style={{marginLeft:'auto'}} onClick={()=>{setScreen('input');setFile(null);setText('');}}><Ic d={I.refresh} size={12}/> New</button>
+        {style==='bullets'&&<div className="gist"><span>The gist</span><p>{hi(firstN(displayExec,1))}</p></div>}
+        <div className="res-bar">
+          <div className="tabs-u" role="tablist">{[['bullets','Key points'],['exec','Paragraph'],['abstract','Abstract']].map(([k,l])=><button key={k} role="tab" aria-selected={style===k} className={style===k?'on':''} onClick={()=>setStyle(k)}>{l}</button>)}</div>
+          <div className="seg" role="group" aria-label="Detail level">{[['short','Short'],['medium','Medium'],['long','Full']].map(([k,l])=><button key={k} className={len===k?'on':''} onClick={()=>setLen(k)}>{l}</button>)}</div>
         </div>
-        <div style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'18px 20px'}}>
-          {style==='bullets'?
-            content.map((b,i)=>(
-              <div key={i} className={`a-up dl${i+1}`} style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:10}}>
-                <span style={{color:'var(--g)',fontWeight:900,fontSize:12,marginTop:2}}>•</span>
-                <p style={{margin:0,fontSize:13,lineHeight:1.7,color:'var(--sub)'}}>{b}</p>
-              </div>
-            ))
-            :<p className="a-up" style={{fontSize:14,lineHeight:1.8,color:'var(--sub)',margin:0}}>{content[0]}</p>
-          }
+        <div className="read-body">
+          {style==='bullets'?<ul>{content.map((x,i)=><li key={i}>{hi(x)}</li>)}</ul>:<p>{hi(content[0])}</p>}
+        </div>
+        <div className="res-meter">
+          <span>{sumWords} words, about {Math.max(1,Math.round(sumWords/200))} min to read{pct!==null?`, ${pct}% shorter than the original`:''}</span>
+          {pct!==null&&<div className="cmp" title="Summary length compared with the source"><i style={{width:Math.max(2,100-pct)+'%'}}/></div>}
+        </div>
+        <div className="res-actions">
+          <button className="btn btn-p" onClick={()=>exportDoc('Copy')}><Ic d={I.copy} size={14} s="#fff"/> Copy summary</button>
+          <button className="btn btn-s" onClick={()=>exportDoc('Markdown')}><Ic d={I.dl} size={12}/> Download</button>
+          <button className="btn btn-s" onClick={listen}>{speaking?'Stop':'Listen'}</button>
+          <button className="btn btn-s" onClick={()=>exportDoc('PDF')}>Print</button>
         </div>
       </div>
     </div>
@@ -1162,6 +1161,7 @@ function NotesSection({notify, backendOnline}){
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
             <button className="btn btn-s" onClick={()=>setInput(NOTE_SAMPLE)}>📝 Load Sample</button>
             <button className="btn btn-s" onClick={()=>{setInput('');setOutput(null);}}>🗑️ Clear</button>
+            <span className="wc">{input.trim()?input.trim().split(/\s+/).length:0} words, {input.length} characters</span>
           </div>
         </div>
 
@@ -1188,17 +1188,29 @@ function NotesSection({notify, backendOnline}){
             ))}
           </div>
 
-          {/* Output */}
-          {output&&(
-            <div className="a-up" style={{background:'var(--surf)',border:'1px solid var(--border)',borderRadius:10,padding:14,flex:1,overflowY:'auto',maxHeight:260}}>
-              <div style={{display:'flex',justifyContent:'flex-end',gap:6,marginBottom:10}}>
-                <button className="btn btn-s" onClick={()=>{navigator.clipboard?.writeText(output);notify('📋 Copied!');}}><Ic d={I.copy} size={11}/>Copy</button>
-              </div>
-              <pre style={{whiteSpace:'pre-wrap',fontSize:13,lineHeight:1.7,color:'var(--sub)',margin:0,fontFamily:'inherit'}}>{output}</pre>
-            </div>
-          )}
-        </div>
+                  </div>
       </div>
+      {output&&(()=>{
+        const L=output.split('\n'), title=L[0].replace(/:$/,'').replace(/^[^\w]+/,''), body=L.slice(1), txt=body.join('\n').trim();
+        const words=txt.split(/\s+/).filter(Boolean).length;
+        return(
+          <div className="res a-up" style={{marginTop:20}}>
+            <div className="res-top">
+              <div className="res-file"><span className="fi">✨</span><div><b>{title}</b><small>{words} words</small></div></div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <button className="btn btn-p" style={{padding:'9px 18px'}} onClick={()=>{navigator.clipboard?.writeText(txt);notify('Copied');}}>Copy</button>
+                <button className="btn btn-s" onClick={()=>{setInput(txt);setOutput(null);notify('Moved to the input box');}}>Edit as input</button>
+                <button className="btn btn-s" onClick={()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='notes.txt';a.click();}}>Download</button>
+              </div>
+            </div>
+            <div className="read-body">{body.map((ln,i)=>{
+              if(!ln.trim()) return <div key={i} style={{height:10}}/>;
+              const m=ln.match(/^(\d+\.|[-•*])\s+(.*)$/);
+              return m?<p key={i} className="nl"><i>{m[1]}</i><span>{hi(m[2])}</span></p>:<p key={i} className="ln">{hi(ln)}</p>;
+            })}</div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1240,30 +1252,23 @@ function LandingPage({onEnter, theme, setTheme}){
 
       {/* Hero */}
       <section className="lp-hero">
-        <div className="lp-hero-badge"><span className="dot dot-blink"/>Alpha v3.0 — AI-Powered Intelligence</div>
-        <h1>Turn Any Meeting Into<br/><em className="gt">Instant Intelligence</em></h1>
-        <p>Upload meetings, documents, or handwritten notes. Get AI summaries, action items, transcripts, and deep insights — in seconds, not hours.</p>
+        <div className="lp-hero-badge"><span className="dot dot-blink"/>Works on recordings, PDFs and photos of notes</div>
+        <h1>Long meetings, PDFs and notes, boiled down to what matters.</h1>
+        <p>Upload a recording, a document or a photo of your notes. Pick how short you want it, then ask follow-up questions.</p>
         <div className="lp-hero-btns">
-          <button className="btn btn-p btn-big" onClick={onEnter}>⚡ Start For Free</button>
-          <button className="btn btn-out" onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})}>See How It Works ↓</button>
+          <button className="btn btn-p btn-big" onClick={onEnter}>Summarize something</button>
+          <button className="btn btn-out" onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})}>See how it works</button>
         </div>
 
-        {/* Mockup */}
+        {/* Before / after */}
         <div className="lp-mock">
-          <div className="lp-mock-bar">
-            <span style={{background:'#ef4444'}}/><span style={{background:'#f59e0b'}}/><span style={{background:'#22c55e'}}/>
+          <div className="mk-src">
+            <div className="mk-cap">Source: 19-minute call transcript</div>
+            {MEETING_TRANSCRIPT.map((t,i)=>(<p key={i}>{[0,3,6,9].includes(i)?<mark className="hl">{t.text}</mark>:t.text}</p>))}
           </div>
-          <div className="lp-mock-body">
-            <div style={{gridColumn:'1/3'}}>
-              <div className="mk-title" style={{background:'var(--g)',opacity:.3,width:'35%'}}/>
-              <div className="mk-line" style={{width:'95%'}}/><div className="mk-line" style={{width:'80%'}}/><div className="mk-line" style={{width:'68%'}}/>
-            </div>
-            <div>
-              <div className="mk-title"/><div className="mk-line" style={{width:'90%'}}/><div className="mk-line" style={{width:'70%'}}/><div className="mk-line" style={{width:'82%'}}/>
-            </div>
-            <div>
-              <div className="mk-title"/><div className="mk-line" style={{width:'75%'}}/><div className="mk-line" style={{width:'60%'}}/><div className="mk-line" style={{width:'88%'}}/>
-            </div>
+          <div className="mk-out">
+            <div className="mk-cap">Summary: 4 lines</div>
+            <ul>{MEETING_TLDR.slice(0,4).map((t,i)=><li key={i}>{t.t}</li>)}</ul>
           </div>
         </div>
       </section>
@@ -1464,84 +1469,149 @@ const SECTIONS=[
   {id:'notes',icon:'✏️',label:'Notes & AI Writing',sub:'OCR, rewrite, generate'},
 ];
 
+const WS_COPY={
+  meeting:['Meeting & video','Upload a recording. Get a summary, action items, speakers and a transcript you can question.'],
+  docs:['PDF & documents','Drop a PDF, Word file or pasted text, then choose how short and in what format.'],
+  notes:['Notes & writing','Scan handwriting, then summarize, tidy up, expand or turn notes into new text.'],
+};
+
 function Workspace({onBack, theme, setTheme}){
   const [section,setSection]=useState('meeting');
-  const [backendOnline, setBackendOnline]=useState(false);
+  const [backendOnline,setBackendOnline]=useState(false);
   const {items,notify,rm}=useNotify();
 
-  useEffect(() => {
-    function checkBackend() {
-      fetch('http://localhost:8000/health')
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.status === 'ok') {
-            setBackendOnline(true);
-          } else {
-            setBackendOnline(false);
-          }
-        })
-        .catch(() => setBackendOnline(false));
+  useEffect(()=>{
+    function check(){
+      fetch('http://localhost:8000/health').then(r=>r.ok?r.json():null)
+        .then(d=>setBackendOnline(!!(d&&d.status==='ok'))).catch(()=>setBackendOnline(false));
     }
-    checkBackend();
-    const interval = setInterval(checkBackend, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    check(); const iv=setInterval(check,4000); return()=>clearInterval(iv);
+  },[]);
 
   return(
-    <>
+    <div className="browser-window">
       <Notifs items={items} rm={rm}/>
-      <header className="topbar">
-        <div className="topbar-logo" onClick={onBack} title="Back to home">
-          <div className="logo-icon">⚡</div>
-          GigaChad AI
-        </div>
-        <nav className="topbar-nav">
-          {SECTIONS.map(s=>(
-            <button key={s.id} className={`nav-btn${section===s.id?' active':''}`} onClick={()=>setSection(s.id)}>
-              {section===s.id&&<span className="dot"/>}
-              {s.icon} {s.label}
-            </button>
-          ))}
-        </nav>
-        <div style={{display:'flex',gap:10,alignItems:'center'}}>
-          <div className={`badge ${backendOnline?'bg':'b-amber'}`} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,padding:'4px 10px'}} title={backendOnline ? "Connected to local FastAPI backend on port 8000" : "Run start_server.bat to connect local Python backend"}>
-            <span style={{width:7,height:7,borderRadius:'50%',background:backendOnline?'#22c55e':'#f59e0b',display:'inline-block'}}></span>
-            {backendOnline ? 'Backend Online (FastAPI)' : 'Demo Mode (Offline)'}
-          </div>
-          <ThemeToggle theme={theme} setTheme={setTheme} />
-          <button className="btn btn-s" onClick={onBack} style={{gap:6}}>← Home</button>
-        </div>
-      </header>
 
-      {SECTIONS.map(s=>(
-        <div key={s.id} className={`tool-page${section===s.id?' active':''}`}>
-          <div className="hero-banner">
-            <div className="eyebrow"><span className="dot"/>{s.sub}</div>
-            <h1>
-              {s.id==='meeting'&&<><em>Meeting & Video</em> Summarizer</>}
-              {s.id==='docs'&&<><em>PDF & Document</em> Summarizer</>}
-              {s.id==='notes'&&<><em>Notes & AI Writing</em> Assistant</>}
-            </h1>
-            <p>
-              {s.id==='meeting'&&'Upload any recording, call, or lecture. Get a summary, action items, and full transcript in seconds.'}
-              {s.id==='docs'&&'Upload PDF, Word, or raw text. Get instant summaries, key points, and abstracts.'}
-              {s.id==='notes'&&'Transcribe handwritten notes via OCR, then summarize, improve, expand, or generate new text.'}
-            </p>
-          </div>
-          {s.id==='meeting'&&<MeetingSection notify={notify} backendOnline={backendOnline}/>}
-          {s.id==='docs'&&<DocSection notify={notify} backendOnline={backendOnline}/>}
-          {s.id==='notes'&&<NotesSection notify={notify} backendOnline={backendOnline}/>}
+      {/* Chrome Style Top Bar */}
+      <div className="chrome-topbar">
+        <div className="mac-dots">
+          <div className="mac-dot close"/>
+          <div className="mac-dot min"/>
+          <div className="mac-dot max"/>
         </div>
-      ))}
-    </>
+
+        <div className="chrome-tab">
+          <span style={{color:'var(--app-blue)'}}>⚡</span>
+          <span>GigaChad AI</span>
+          <span style={{color:'var(--app-text-muted)', fontSize:11, marginLeft:4}}>✕</span>
+        </div>
+
+        <div className="chrome-url-bar">
+          <span style={{color:'var(--app-text-muted)'}}>🔒</span>
+          <span>app.gigachad.ai/workspace/{section}-ai</span>
+        </div>
+
+        <div style={{display:'flex', alignItems:'center', gap:12, color:'var(--app-text-sub)'}}>
+          <span style={{cursor:'pointer'}} onClick={()=>setTheme(theme==='dark'?'light':'dark')} title="Toggle Light/Dark Theme">
+            {theme==='dark' ? '☀️' : '🌙'}
+          </span>
+          <span style={{cursor:'pointer'}} onClick={onBack} title="Back to Landing Page">🏠</span>
+        </div>
+      </div>
+
+      {/* Modern Dashboard Workspace Body */}
+      <div className="dashboard-layout">
+        {/* Left Sleek Navigation Sidebar */}
+        <aside className="dash-sidebar">
+          <div className="dash-brand" onClick={onBack} title="GigaChad AI Home">
+            <div className="dash-brand-icon">G</div>
+            <div className="dash-brand-title">GigaChad AI</div>
+          </div>
+
+          <div className="dash-menu-group">
+            <button className={`dash-nav-btn ${section==='workspace'?'active':''}`} onClick={()=>setSection('meeting')}>
+              <span>🏠</span> <span>Workspace</span>
+            </button>
+            <button className={`dash-nav-btn ${section==='meeting'?'active':''}`} onClick={()=>setSection('meeting')}>
+              <span>🎙️</span> <span>Meeting AI</span>
+            </button>
+            <button className={`dash-nav-btn ${section==='docs'?'active':''}`} onClick={()=>setSection('docs')}>
+              <span>📄</span> <span>Document AI</span>
+            </button>
+            <button className={`dash-nav-btn ${section==='notes'?'active':''}`} onClick={()=>setSection('notes')}>
+              <span>👁️</span> <span>Vision AI</span>
+            </button>
+            <button className="dash-nav-btn" onClick={()=>notify('History synced with local database')}>
+              <span>🕒</span> <span>History</span>
+            </button>
+          </div>
+
+          <div style={{height:1, background:'var(--app-card-border)', margin:'6px 0'}}/>
+
+          <div className="dash-menu-group">
+            <button className="dash-nav-btn" onClick={()=>notify('Dashboard metrics ready')}>
+              <span>📊</span> <span>Dashboard</span>
+            </button>
+            <button className="dash-nav-btn" onClick={()=>notify('Marketing exports ready')}>
+              <span>📢</span> <span>Marketing</span>
+            </button>
+            <button className="dash-nav-btn" onClick={()=>notify('Settings panel')}>
+              <span>⚙️</span> <span>Settings</span>
+            </button>
+          </div>
+
+          <div style={{marginTop:'auto'}}>
+            <button className="dash-nav-btn" onClick={()=>notify('Preferences')}>
+              <span>⚙️</span> <span>Preferences</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Center Main Dashboard Content */}
+        <main className="dash-main">
+          {/* Top Bar Header */}
+          <header className="dash-header">
+            <div className="dash-breadcrumb">
+              <span className="sub">Workspace</span>
+              <span style={{color:'var(--app-text-muted)'}}>/</span>
+              <span>{section==='meeting' ? '🎙️ Meeting & Audio/Video AI' : section==='docs' ? '📄 Document & PDF AI' : '✏️ Notes & Vision AI'}</span>
+            </div>
+
+            <div className="dash-header-actions">
+              <div className={`backend-badge-pill ${backendOnline?'':'off'}`}>
+                <span style={{fontSize:8}}>●</span>
+                <span>{backendOnline ? 'Backend Online (FastAPI)' : 'Backend Standby (FastAPI)'}</span>
+              </div>
+
+              <span style={{cursor:'pointer', color:'var(--app-text-sub)', fontSize:16}} title="Search">🔍</span>
+              <span style={{cursor:'pointer', color:'var(--app-text-sub)', fontSize:16}} title="Share" onClick={()=>notify('Link copied to clipboard')}>📤</span>
+              <span style={{cursor:'pointer', color:'var(--app-text-sub)', fontSize:16}} title="Settings">⚙️</span>
+              <span style={{cursor:'pointer', color:'var(--app-text-sub)', fontSize:16}} title="Notifications">🔔</span>
+
+              <div className="user-profile-badge">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=50&h=50&fit=crop" className="user-avatar-img" alt="User"/>
+                <div style={{display:'flex', flexDirection:'column', lineHeight:1.1}}>
+                  <span style={{fontSize:12, fontWeight:700}}>Alex J.</span>
+                  <span style={{fontSize:10, fontWeight:800, color:'#2563eb'}}>PRO</span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Body Section Rendering */}
+          <div style={{padding:'20px 24px'}}>
+            {section==='meeting'&&<MeetingSection notify={notify} backendOnline={backendOnline}/>}
+            {section==='docs'&&<DocSection notify={notify} backendOnline={backendOnline}/>}
+            {section==='notes'&&<NotesSection notify={notify} backendOnline={backendOnline}/>}
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   ROOT APP
-═══════════════════════════════════════════════════ */
 function App(){
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
   const [page,setPage]=useState('landing');
   function go(p){setPage(p);window.scrollTo({top:0,behavior:'smooth'});}
