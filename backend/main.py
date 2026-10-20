@@ -18,6 +18,8 @@ from typing import Optional, List
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -125,8 +127,26 @@ class SentimentInput(BaseModel):
 #   HEALTH CHECK
 # ══════════════════════════════════════════════════════════════════
 
-@app.get("/", tags=["Health"])
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+@app.get("/", tags=["Frontend"])
 async def root():
+    """Serves the main frontend Web Application"""
+    index_path = os.path.join(FRONTEND_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"status": "running ✓", "app": "GigaChad AI Backend"}
+
+@app.get("/style.css", tags=["Frontend"])
+async def get_style():
+    """Serves stylesheet"""
+    css_path = os.path.join(FRONTEND_DIR, "style.css")
+    if os.path.exists(css_path):
+        return FileResponse(css_path, media_type="text/css")
+    raise HTTPException(404, "style.css not found")
+
+@app.get("/api-info", tags=["Health"])
+async def api_info():
     """Server info and endpoint list"""
     return {
         "status":  "running ✓",
